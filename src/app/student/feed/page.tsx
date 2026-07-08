@@ -12,8 +12,6 @@ export default async function StudentFeedPage() {
   const student = await getCurrentUser();
 
   if (!student || student.role !== 'student') {
-    const cookieStore = await cookies();
-    cookieStore.delete('student-session');
     redirect('/');
   }
 

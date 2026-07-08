@@ -12,8 +12,6 @@ export default async function AdminPage() {
   const user = await getCurrentUser();
 
   if (!user || user.role !== 'teacher') {
-    const cookieStore = await cookies();
-    cookieStore.delete('teacher-session');
     redirect('/admin/login');
   }
 
