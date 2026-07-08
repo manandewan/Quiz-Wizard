@@ -21,10 +21,6 @@ export interface AuthResult {
 
 // Student Login & Frictionless Registration Action
 export async function studentLogin(name: string, pin: string): Promise<AuthResult> {
-  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is missing in production!');
-  }
-
   // Validate inputs
   const trimmedName = name.trim();
   if (!trimmedName) {
@@ -111,10 +107,6 @@ export async function studentLogout(): Promise<AuthResult> {
 
 // Teacher Login Action (imsludhiana / 123456) - Trigger redeploy for env vars
 export async function teacherLogin(teacherId: string, password: string): Promise<AuthResult> {
-  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is missing in production!');
-  }
-
   const trimmedId = teacherId.trim();
   if (trimmedId !== TEACHER_ID || password !== TEACHER_PASSWORD) {
     return { success: false, error: 'Invalid Teacher ID or password.' };
@@ -192,10 +184,6 @@ export async function teacherLogout(): Promise<AuthResult> {
 
 // Helper Action to get current logged in user from cookies (on server-side)
 export async function getCurrentUser() {
-  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is missing in production!');
-  }
-
   const cookieStore = await cookies();
   
   const studentToken = cookieStore.get('student-session')?.value;
