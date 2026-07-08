@@ -58,16 +58,24 @@ export default function StudentFeed({
       .channel('public:questions')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'questions' },
+        { event: '*', schema: 'public', table: 'questions' },
         (payload) => {
           console.log('Realtime change received:', payload);
-          const newQuestion = payload.new as Question;
-          // Prepend new question to the list (latest at the top)
-          setQuestions((prev) => {
-            // Check if it already exists to prevent duplicates
-            if (prev.some(q => q.id === newQuestion.id)) return prev;
-            return [newQuestion, ...prev];
-          });
+          if (payload.eventType === 'INSERT') {
+            const newQuestion = payload.new as Question;
+            setQuestions((prev) => {
+              if (prev.some(q => q.id === newQuestion.id)) return prev;
+              return [newQuestion, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedQuestion = payload.new as Question;
+            setQuestions((prev) =>
+              prev.map((q) => (q.id === updatedQuestion.id ? updatedQuestion : q))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deletedQuestion = payload.old as { id: string };
+            setQuestions((prev) => prev.filter((q) => q.id !== deletedQuestion.id));
+          }
         }
       )
       .subscribe();

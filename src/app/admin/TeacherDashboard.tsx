@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { teacherLogout } from '@/app/actions/auth';
 import { createQuestion } from '@/app/actions/questions';
+import { supabase } from '@/lib/supabase';
 
 interface Question {
   id: string;
@@ -41,6 +42,38 @@ export default function TeacherDashboard({ initialQuestions, user }: TeacherDash
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('teacher-dashboard-questions')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'questions' },
+        (payload) => {
+          console.log('Realtime change received in dashboard:', payload);
+          if (payload.eventType === 'INSERT') {
+            const newQ = payload.new as Question;
+            setQuestions((prev) => {
+              if (prev.some((q) => q.id === newQ.id)) return prev;
+              return [newQ, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedQ = payload.new as Question;
+            setQuestions((prev) =>
+              prev.map((q) => (q.id === updatedQ.id ? updatedQ : q))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deletedQ = payload.old as { id: string };
+            setQuestions((prev) => prev.filter((q) => q.id !== deletedQ.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleLogout = async () => {
     const result = await teacherLogout();
@@ -97,15 +130,15 @@ export default function TeacherDashboard({ initialQuestions, user }: TeacherDash
         setImageFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
 
-        // Fetch latest questions list
-        // Note: In production we could also listen via Realtime, but manual state update is solid here
-        // We'll query our own app router or Supabase to refresh, or we can just reload the router
-        router.refresh();
+        if (result.question) {
+          const newQuestion = result.question as Question;
+          setQuestions((prev) => {
+            if (prev.some((q) => q.id === newQuestion.id)) return prev;
+            return [newQuestion, ...prev];
+          });
+        }
         
-        // Let's fetch the list again or reload page to show the new question
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        router.refresh();
       } else {
         setError(result.error || 'Failed to create question.');
       }

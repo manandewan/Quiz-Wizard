@@ -7,6 +7,13 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'testprep-jwt-secret-key-2026';
 
+const TEACHER_ID = process.env.TEACHER_ID || 'imsludhiana';
+const TEACHER_PASSWORD = process.env.TEACHER_PASSWORD || '123456';
+
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.warn('Warning: JWT_SECRET environment variable is missing in production!');
+}
+
 export interface AuthResult {
   success: boolean;
   error?: string;
@@ -14,6 +21,10 @@ export interface AuthResult {
 
 // Student Login & Frictionless Registration Action
 export async function studentLogin(name: string, pin: string): Promise<AuthResult> {
+  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is missing in production!');
+  }
+
   // Validate inputs
   const trimmedName = name.trim();
   if (!trimmedName) {
@@ -41,14 +52,14 @@ export async function studentLogin(name: string, pin: string): Promise<AuthResul
 
     if (user) {
       // 2. User exists: verify PIN
-      const pinMatches = bcrypt.compareSync(pin, user.pin_hash);
+      const pinMatches = await bcrypt.compare(pin, user.pin_hash);
       if (!pinMatches) {
         return { success: false, error: 'Incorrect PIN for this Full Name.' };
       }
     } else {
       // 3. User does not exist: create account frictionlessly
-      const salt = bcrypt.genSaltSync(10);
-      const pinHash = bcrypt.hashSync(pin, salt);
+      const salt = await bcrypt.genSalt(10);
+      const pinHash = await bcrypt.hash(pin, salt);
 
       const { data: newUser, error: insertError } = await supabase
         .from('users')
@@ -100,8 +111,12 @@ export async function studentLogout(): Promise<AuthResult> {
 
 // Teacher Login Action (imsludhiana / 123456) - Trigger redeploy for env vars
 export async function teacherLogin(teacherId: string, password: string): Promise<AuthResult> {
+  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is missing in production!');
+  }
+
   const trimmedId = teacherId.trim();
-  if (trimmedId !== 'imsludhiana' || password !== '123456') {
+  if (trimmedId !== TEACHER_ID || password !== TEACHER_PASSWORD) {
     return { success: false, error: 'Invalid Teacher ID or password.' };
   }
 
@@ -177,6 +192,10 @@ export async function teacherLogout(): Promise<AuthResult> {
 
 // Helper Action to get current logged in user from cookies (on server-side)
 export async function getCurrentUser() {
+  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is missing in production!');
+  }
+
   const cookieStore = await cookies();
   
   const studentToken = cookieStore.get('student-session')?.value;

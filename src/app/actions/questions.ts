@@ -17,7 +17,7 @@ export async function createQuestion(
   options: string[],
   correctOptionIndex: number,
   imageFile?: File | null
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; question?: any }> {
   // 1. Verify that a teacher is making the request
   const user = await getCurrentUser();
   if (!user || user.role !== 'teacher') {
@@ -33,6 +33,14 @@ export async function createQuestion(
   if (!hasText && !hasImage) {
     return { success: false, error: 'Please enter question text or upload an image.' };
   }
+  if (imageFile && imageFile.size > 0) {
+    if (imageFile.size > 5 * 1024 * 1024) {
+      return { success: false, error: 'Image file size must be less than 5MB.' };
+    }
+    if (!imageFile.type.startsWith('image/')) {
+      return { success: false, error: 'File must be an image.' };
+    }
+  }
   if (!Array.isArray(options) || options.length !== 4 || options.some(opt => !opt.trim())) {
     return { success: false, error: 'Please provide all 4 option choices.' };
   }
@@ -40,6 +48,7 @@ export async function createQuestion(
     return { success: false, error: 'Invalid correct option selection.' };
   }
 
+  let uploadedFileName: string | null = null;
   try {
     let imageUrl = null;
 
@@ -47,6 +56,7 @@ export async function createQuestion(
     if (imageFile && imageFile.size > 0) {
       const fileExt = imageFile.name.split('.').pop() || 'png';
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      uploadedFileName = fileName;
       
       const arrayBuffer = await imageFile.arrayBuffer();
       const buffer = new Uint8Array(arrayBuffer);
@@ -73,7 +83,7 @@ export async function createQuestion(
     }
 
     // 4. Save question metadata to the database
-    const { error: dbError } = await supabase
+    const { data: newQuestion, error: dbError } = await supabase
       .from('questions')
       .insert({
         category,
@@ -81,16 +91,28 @@ export async function createQuestion(
         options: options.map(opt => opt.trim()),
         correct_option_index: correctOptionIndex,
         image_url: imageUrl,
-      });
+      })
+      .select()
+      .single();
 
     if (dbError) {
       console.error('Error saving question:', dbError);
+      if (uploadedFileName) {
+        await supabase.storage.from('question-images').remove([uploadedFileName]);
+      }
       return { success: false, error: `Failed to save question: ${dbError.message}` };
     }
 
-    return { success: true };
+    return { success: true, question: newQuestion };
   } catch (err) {
     console.error('Create question exception:', err);
+    if (uploadedFileName) {
+      try {
+        await supabase.storage.from('question-images').remove([uploadedFileName]);
+      } catch (cleanupErr) {
+        console.error('Error cleaning up uploaded image:', cleanupErr);
+      }
+    }
     return { success: false, error: 'An unexpected error occurred.' };
   }
 }
