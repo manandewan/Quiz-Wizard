@@ -98,7 +98,7 @@ export async function studentLogout(): Promise<AuthResult> {
   return { success: true };
 }
 
-// Teacher Login Action
+// Teacher Login Action (imsludhiana / 123456) - Trigger redeploy for env vars
 export async function teacherLogin(teacherId: string, password: string): Promise<AuthResult> {
   const trimmedId = teacherId.trim();
   if (trimmedId !== 'imsludhiana' || password !== '123456') {
