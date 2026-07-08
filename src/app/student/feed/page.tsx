@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/auth';
 import { supabase } from '@/lib/supabase';
+import { cookies } from 'next/headers';
 import StudentFeed from './StudentFeed';
 
 // Force dynamic page rendering on request
@@ -11,6 +12,8 @@ export default async function StudentFeedPage() {
   const student = await getCurrentUser();
 
   if (!student || student.role !== 'student') {
+    const cookieStore = await cookies();
+    cookieStore.delete('student-session');
     redirect('/');
   }
 

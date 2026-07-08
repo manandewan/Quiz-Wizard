@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/auth';
 import { supabase } from '@/lib/supabase';
+import { cookies } from 'next/headers';
 import TeacherDashboard from './TeacherDashboard';
 
 // Ensure this route is server-rendered dynamically on request
@@ -11,6 +12,8 @@ export default async function AdminPage() {
   const user = await getCurrentUser();
 
   if (!user || user.role !== 'teacher') {
+    const cookieStore = await cookies();
+    cookieStore.delete('teacher-session');
     redirect('/admin/login');
   }
 
