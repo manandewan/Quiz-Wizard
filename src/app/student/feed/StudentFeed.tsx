@@ -103,15 +103,6 @@ export default function StudentFeed({
           },
         }));
 
-        // Add to attempts state
-        const newAttempt: Attempt = {
-          id: Math.random().toString(), // local temporary ID
-          question_id: questionId,
-          is_correct: result.isCorrect!,
-          selected_option_index: optionIdx,
-        };
-        setAttempts((prev) => [...prev, newAttempt]);
-
         // Increment score locally if correct
         if (result.isCorrect) {
           setScore((prev) => prev + 1);
@@ -130,9 +121,9 @@ export default function StudentFeed({
   const currentSubjectQuestions = questions.filter((q) => q.category === activeSubject);
   const attemptedIds = new Set(attempts.map((a) => a.question_id));
 
-  // Fresh questions (not attempted yet and not just answered in this session)
+  // Fresh questions (not attempted yet; remains visible in feed until refresh)
   const freshQuestions = currentSubjectQuestions.filter(
-    (q) => !attemptedIds.has(q.id) && !justAnswered[q.id]
+    (q) => !attemptedIds.has(q.id)
   );
 
   // History questions (attempted, OR just answered)
