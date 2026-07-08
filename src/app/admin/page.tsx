@@ -16,34 +16,55 @@ export default async function AdminPage() {
   }
 
   // 2. Fetch initial questions list from database
-  const { data: questions, error: qError } = await supabase
-    .from('questions')
-    .select('*')
-    .order('created_at', { ascending: false });
+  let questions: any[] = [];
+  try {
+    const { data, error: qError } = await supabase
+      .from('questions')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (qError) {
-    console.error('Error fetching questions for dashboard:', qError);
+    if (qError) {
+      console.error('Error fetching questions for dashboard:', qError);
+    } else {
+      questions = data || [];
+    }
+  } catch (err) {
+    console.error('Connection error fetching questions for dashboard:', err);
   }
 
   // 3. Fetch initial attempts from database
-  const { data: attempts, error: aError } = await supabase
-    .from('attempts')
-    .select('*')
-    .order('created_at', { ascending: false });
+  let attempts: any[] = [];
+  try {
+    const { data, error: aError } = await supabase
+      .from('attempts')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (aError) {
-    console.error('Error fetching attempts for dashboard:', aError);
+    if (aError) {
+      console.error('Error fetching attempts for dashboard:', aError);
+    } else {
+      attempts = data || [];
+    }
+  } catch (err) {
+    console.error('Connection error fetching attempts for dashboard:', err);
   }
 
   // 4. Fetch all student users
-  const { data: students, error: sError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('role', 'student')
-    .order('created_at', { ascending: false });
+  let students: any[] = [];
+  try {
+    const { data, error: sError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'student')
+      .order('created_at', { ascending: false });
 
-  if (sError) {
-    console.error('Error fetching students for dashboard:', sError);
+    if (sError) {
+      console.error('Error fetching students for dashboard:', sError);
+    } else {
+      students = data || [];
+    }
+  } catch (err) {
+    console.error('Connection error fetching students for dashboard:', err);
   }
 
   return (

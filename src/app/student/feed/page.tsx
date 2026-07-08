@@ -16,31 +16,56 @@ export default async function StudentFeedPage() {
   }
 
   // 2. Fetch all questions (latest first)
-  const { data: questions, error: qError } = await supabase
-    .from('questions')
-    .select('*')
-    .order('created_at', { ascending: false });
+  let questions: any[] = [];
+  try {
+    const { data, error: qError } = await supabase
+      .from('questions')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (qError) {
-    console.error('Error fetching questions:', qError);
+    if (qError) {
+      console.error('Error fetching questions:', qError);
+    } else {
+      questions = data || [];
+    }
+  } catch (err) {
+    console.error('Connection error fetching questions:', err);
   }
 
   // 3. Fetch attempts made by this student
-  const { data: attempts, error: aError } = await supabase
-    .from('attempts')
-    .select('id, question_id, is_correct, selected_option_index')
-    .eq('student_id', student.id);
+  let attempts: any[] = [];
+  try {
+    const { data, error: aError } = await supabase
+      .from('attempts')
+      .select('id, question_id, is_correct, selected_option_index')
+      .eq('student_id', student.id);
 
-  if (aError) {
-    console.error('Error fetching attempts:', aError);
+    if (aError) {
+      console.error('Error fetching attempts:', aError);
+    } else {
+      attempts = data || [];
+    }
+  } catch (err) {
+    console.error('Connection error fetching attempts:', err);
   }
 
   // 4. Fetch the student's actual current score
-  const { data: userRecord } = await supabase
-    .from('users')
-    .select('total_score')
-    .eq('id', student.id)
-    .single();
+  let userRecord = null;
+  try {
+    const { data, error: uError } = await supabase
+      .from('users')
+      .select('total_score')
+      .eq('id', student.id)
+      .single();
+    
+    if (uError) {
+      console.error('Error fetching student score:', uError);
+    } else {
+      userRecord = data;
+    }
+  } catch (err) {
+    console.error('Connection error fetching student score:', err);
+  }
 
   return (
     <StudentFeed

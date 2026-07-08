@@ -41,8 +41,8 @@ export async function createQuestion(
       return { success: false, error: 'File must be an image.' };
     }
   }
-  if (!Array.isArray(options) || options.length !== 4 || options.some(opt => !opt.trim())) {
-    return { success: false, error: 'Please provide all 4 option choices.' };
+  if (!Array.isArray(options) || options.length !== 4 || options.some(opt => typeof opt !== 'string' || !opt.trim())) {
+    return { success: false, error: 'Please provide all 4 valid option choices as non-empty strings.' };
   }
   if (correctOptionIndex < 0 || correctOptionIndex > 3) {
     return { success: false, error: 'Invalid correct option selection.' };
@@ -83,17 +83,33 @@ export async function createQuestion(
     }
 
     // 4. Save question metadata to the database
-    const { data: newQuestion, error: dbError } = await supabase
-      .from('questions')
-      .insert({
-        category,
-        text_content: textContent.trim() || null,
-        options: options.map(opt => opt.trim()),
-        correct_option_index: correctOptionIndex,
-        image_url: imageUrl,
-      })
-      .select()
-      .single();
+    let newQuestion = null;
+    let dbError = null;
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .insert({
+          category,
+          text_content: textContent.trim() || null,
+          options: options.map(opt => opt.trim()),
+          correct_option_index: correctOptionIndex,
+          image_url: imageUrl,
+        })
+        .select()
+        .single();
+      newQuestion = data;
+      dbError = error;
+    } catch (dbErr) {
+      console.error('Database query exception in createQuestion:', dbErr);
+      if (uploadedFileName) {
+        try {
+          await supabase.storage.from('question-images').remove([uploadedFileName]);
+        } catch (cleanupErr) {
+          console.error('Error cleaning up uploaded image:', cleanupErr);
+        }
+      }
+      return { success: false, error: 'Database connection failed while saving question.' };
+    }
 
     if (dbError) {
       console.error('Error saving question:', dbError);
@@ -188,11 +204,20 @@ export async function deleteQuestion(
 
   try {
     // 2. Fetch the question to check if an image exists
-    const { data: question, error: fetchError } = await supabase
-      .from('questions')
-      .select('image_url')
-      .eq('id', questionId)
-      .single();
+    let question = null;
+    let fetchError = null;
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('image_url')
+        .eq('id', questionId)
+        .single();
+      question = data;
+      fetchError = error;
+    } catch (dbErr) {
+      console.error('Database query exception in deleteQuestion (fetch):', dbErr);
+      return { success: false, error: 'Database connection failed while fetching question details.' };
+    }
 
     if (fetchError) {
       return { success: false, error: `Failed to fetch question: ${fetchError.message}` };
@@ -212,10 +237,17 @@ export async function deleteQuestion(
     }
 
     // 4. Delete the question row from database (cascade deletes attempts automatically)
-    const { error: deleteError } = await supabase
-      .from('questions')
-      .delete()
-      .eq('id', questionId);
+    let deleteError = null;
+    try {
+      const { error } = await supabase
+        .from('questions')
+        .delete()
+        .eq('id', questionId);
+      deleteError = error;
+    } catch (dbErr) {
+      console.error('Database query exception in deleteQuestion (delete):', dbErr);
+      return { success: false, error: 'Database connection failed during deletion.' };
+    }
 
     if (deleteError) {
       return { success: false, error: `Failed to delete question: ${deleteError.message}` };

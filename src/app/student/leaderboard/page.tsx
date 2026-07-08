@@ -13,18 +13,25 @@ export default async function LeaderboardPage() {
   }
 
   // 2. Fetch all student users ranked by score
-  const { data: students, error } = await supabase
-    .from('users')
-    .select('id, name, total_score')
-    .eq('role', 'student')
-    .order('total_score', { ascending: false })
-    .order('name', { ascending: true });
+  let students: any[] = [];
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, total_score')
+      .eq('role', 'student')
+      .order('total_score', { ascending: false })
+      .order('name', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching leaderboard data:', error);
+    if (error) {
+      console.error('Error fetching leaderboard data:', error);
+    } else {
+      students = data || [];
+    }
+  } catch (err) {
+    console.error('Connection error fetching leaderboard data:', err);
   }
 
-  const list = students || [];
+  const list = students;
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col relative overflow-hidden">

@@ -45,7 +45,6 @@ export default function StudentFeed({
   const [score, setScore] = useState(initialScore);
 
   // Filter States
-  const [activeSubject, setActiveSubject] = useState<'Quants' | 'VA/RC'>('Quants');
   const [activeFeedTab, setActiveFeedTab] = useState<'Fresh' | 'History'>('Fresh');
 
   // Interactive Question State (to track current clicks/loading)
@@ -126,16 +125,15 @@ export default function StudentFeed({
   };
 
   // 2. Classify and filter questions based on selection
-  const currentSubjectQuestions = questions.filter((q) => q.category === activeSubject);
   const attemptedIds = new Set(attempts.map((a) => a.question_id));
 
   // Fresh questions (not attempted yet; remains visible in feed until refresh)
-  const freshQuestions = currentSubjectQuestions.filter(
+  const freshQuestions = questions.filter(
     (q) => !attemptedIds.has(q.id)
   );
 
   // History questions (attempted, OR just answered)
-  const historyQuestions = currentSubjectQuestions.filter(
+  const historyQuestions = questions.filter(
     (q) => attemptedIds.has(q.id) || justAnswered[q.id]
   );
 
@@ -182,42 +180,8 @@ export default function StudentFeed({
         </div>
       </header>
 
-      {/* Subject Filter Navigation */}
-      <div className="max-w-4xl w-full mx-auto px-6 mt-8 flex justify-center">
-        <div className="flex bg-slate-900/60 p-1.5 rounded-xl border border-slate-800/80 w-full max-w-md">
-          <button
-            onClick={() => {
-              setActiveSubject('Quants');
-              setActiveFeedTab('Fresh');
-            }}
-            id="subject-tab-quants"
-            className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all active:scale-[0.98] ${
-              activeSubject === 'Quants'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Quants (Quantitative)
-          </button>
-          <button
-            onClick={() => {
-              setActiveSubject('VA/RC');
-              setActiveFeedTab('Fresh');
-            }}
-            id="subject-tab-varc"
-            className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all active:scale-[0.98] ${
-              activeSubject === 'VA/RC'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            VA/RC (Verbal)
-          </button>
-        </div>
-      </div>
-
       {/* Feed Sub-tab Filter Navigation */}
-      <div className="max-w-3xl w-full mx-auto px-6 mt-6 flex justify-center">
+      <div className="max-w-3xl w-full mx-auto px-6 mt-8 flex justify-center">
         <div className="flex gap-4 border-b border-slate-900 pb-3 w-full">
           <button
             onClick={() => setActiveFeedTab('Fresh')}
@@ -261,7 +225,7 @@ export default function StudentFeed({
             {freshQuestions.length === 0 ? (
               <div className="glass-panel rounded-xl p-12 text-center border border-slate-900">
                 <p className="text-slate-400 text-sm font-medium">
-                  🎉 Fantastic job! You have answered all available {activeSubject} questions.
+                  🎉 Fantastic job! You have answered all available questions.
                 </p>
                 <div className="mt-6">
                   <Link 
@@ -288,7 +252,16 @@ export default function StudentFeed({
                       </div>
                     </div>
 
-                    <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      {q.category === 'Quants' ? (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          QA
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                          VA/RC
+                        </span>
+                      )}
                       <span className="text-xs text-slate-500 font-medium">
                         Posted {new Date(q.created_at).toLocaleDateString(undefined, { 
                           month: 'short', 
@@ -375,7 +348,7 @@ export default function StudentFeed({
           <div className="space-y-6">
             {historyQuestions.length === 0 ? (
               <div className="glass-panel rounded-xl p-12 text-center text-slate-500 border border-slate-900">
-                You haven't attempted any questions in this category yet.
+                You haven't attempted any questions yet.
               </div>
             ) : (
               historyQuestions.map((q) => {
@@ -393,9 +366,20 @@ export default function StudentFeed({
                     className="glass-card rounded-xl p-5 border border-slate-800 opacity-90"
                   >
                     <div className="flex items-center justify-between mb-3.5">
-                      <span className="text-xs text-slate-500 font-medium">
-                        Attempted Question
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {q.category === 'Quants' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                            QA
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            VA/RC
+                          </span>
+                        )}
+                        <span className="text-xs text-slate-500 font-medium">
+                          Attempted Question
+                        </span>
+                      </div>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                         wasCorrect 
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 

@@ -26,18 +26,30 @@ export async function studentLogin(name: string, pin: string): Promise<AuthResul
   if (!trimmedName) {
     return { success: false, error: 'Full Name is required.' };
   }
+  if (trimmedName.length > 50) {
+    return { success: false, error: 'Full Name cannot exceed 50 characters.' };
+  }
   if (!/^\d{4}$/.test(pin)) {
     return { success: false, error: 'Secret PIN must be exactly 4 digits.' };
   }
 
   try {
     // 1. Check if student already exists
-    const { data: user, error: fetchError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('name', trimmedName)
-      .eq('role', 'student')
-      .maybeSingle();
+    let user = null;
+    let fetchError = null;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('name', trimmedName)
+        .eq('role', 'student')
+        .maybeSingle();
+      user = data;
+      fetchError = error;
+    } catch (dbErr) {
+      console.error('Database fetch exception in studentLogin:', dbErr);
+      return { success: false, error: 'Database error. Please try again.' };
+    }
 
     if (fetchError) {
       console.error('Error fetching student:', fetchError);
@@ -57,16 +69,25 @@ export async function studentLogin(name: string, pin: string): Promise<AuthResul
       const salt = await bcrypt.genSalt(10);
       const pinHash = await bcrypt.hash(pin, salt);
 
-      const { data: newUser, error: insertError } = await supabase
-        .from('users')
-        .insert({
-          name: trimmedName,
-          role: 'student',
-          pin_hash: pinHash,
-          total_score: 0,
-        })
-        .select()
-        .single();
+      let newUser = null;
+      let insertError = null;
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .insert({
+            name: trimmedName,
+            role: 'student',
+            pin_hash: pinHash,
+            total_score: 0,
+          })
+          .select()
+          .single();
+        newUser = data;
+        insertError = error;
+      } catch (dbErr) {
+        console.error('Database insert exception in studentLogin:', dbErr);
+        return { success: false, error: 'Failed to create student account.' };
+      }
 
       if (insertError) {
         console.error('Error inserting student:', insertError);
@@ -113,12 +134,23 @@ export async function teacherLogin(teacherId: string, password: string): Promise
   }
 
   try {
-    // Check if the teacher user exists in the public database users table
-    const { data: user, error: dbError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('role', 'teacher')
-      .maybeSingle();
+    // Check if the teacher user exists in the public database users table - limit 1 and get first element if present
+    let user = null;
+    let dbError = null;
+    try {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'teacher')
+        .limit(1);
+      dbError = error;
+      if (users && users.length > 0) {
+        user = users[0];
+      }
+    } catch (dbErr) {
+      console.error('Database connection exception in teacherLogin:', dbErr);
+      return { success: false, error: 'Database connection failed.' };
+    }
 
     if (dbError) {
       console.error('Error fetching teacher user:', dbError);
@@ -129,16 +161,25 @@ export async function teacherLogin(teacherId: string, password: string): Promise
 
     // If teacher user doesn't exist for some reason, create a default one
     if (!user) {
-      const { data: newUser, error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id: 'd3b07384-d113-4e4e-9c76-2e8b61c94441',
-          name: 'Teacher Admin',
-          role: 'teacher',
-          total_score: 0,
-        })
-        .select()
-        .single();
+      let newUser = null;
+      let insertError = null;
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .insert({
+            id: 'd3b07384-d113-4e4e-9c76-2e8b61c94441',
+            name: 'Teacher Admin',
+            role: 'teacher',
+            total_score: 0,
+          })
+          .select()
+          .single();
+        newUser = data;
+        insertError = error;
+      } catch (dbErr) {
+        console.error('Database insert exception in teacherLogin:', dbErr);
+        return { success: false, error: 'Failed to configure teacher user in database.' };
+      }
 
       if (insertError) {
         console.error('Error inserting default teacher user:', insertError);
@@ -184,26 +225,30 @@ export async function teacherLogout(): Promise<AuthResult> {
 
 // Helper Action to get current logged in user from cookies (on server-side)
 export async function getCurrentUser() {
-  const cookieStore = await cookies();
-  
-  const studentToken = cookieStore.get('student-session')?.value;
-  if (studentToken) {
-    try {
-      const decoded = jwt.verify(studentToken, JWT_SECRET) as { id: string; name: string; role: string };
-      if (decoded.role === 'student') return decoded;
-    } catch {
-      // Token invalid or expired
+  try {
+    const cookieStore = await cookies();
+    
+    const studentToken = cookieStore.get('student-session')?.value;
+    if (studentToken) {
+      try {
+        const decoded = jwt.verify(studentToken, JWT_SECRET) as { id: string; name: string; role: string };
+        if (decoded.role === 'student') return decoded;
+      } catch {
+        // Token invalid or expired
+      }
     }
-  }
 
-  const teacherToken = cookieStore.get('teacher-session')?.value;
-  if (teacherToken) {
-    try {
-      const decoded = jwt.verify(teacherToken, JWT_SECRET) as { id: string; name: string; role: string; email: string };
-      if (decoded.role === 'teacher') return decoded;
-    } catch {
-      // Token invalid or expired
+    const teacherToken = cookieStore.get('teacher-session')?.value;
+    if (teacherToken) {
+      try {
+        const decoded = jwt.verify(teacherToken, JWT_SECRET) as { id: string; name: string; role: string; email: string };
+        if (decoded.role === 'teacher') return decoded;
+      } catch {
+        // Token invalid or expired
+      }
     }
+  } catch (err) {
+    console.error('Error in getCurrentUser:', err);
   }
 
   return null;
