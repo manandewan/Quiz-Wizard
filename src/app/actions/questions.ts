@@ -28,8 +28,10 @@ export async function createQuestion(
   if (!category || (category !== 'Quants' && category !== 'VA/RC')) {
     return { success: false, error: 'Invalid category selection.' };
   }
-  if (!textContent.trim()) {
-    return { success: false, error: 'Question content cannot be empty.' };
+  const hasText = textContent.trim().length > 0;
+  const hasImage = imageFile && imageFile.size > 0;
+  if (!hasText && !hasImage) {
+    return { success: false, error: 'Please enter question text or upload an image.' };
   }
   if (!Array.isArray(options) || options.length !== 4 || options.some(opt => !opt.trim())) {
     return { success: false, error: 'Please provide all 4 option choices.' };
@@ -75,7 +77,7 @@ export async function createQuestion(
       .from('questions')
       .insert({
         category,
-        text_content: textContent.trim(),
+        text_content: textContent.trim() || null,
         options: options.map(opt => opt.trim()),
         correct_option_index: correctOptionIndex,
         image_url: imageUrl,

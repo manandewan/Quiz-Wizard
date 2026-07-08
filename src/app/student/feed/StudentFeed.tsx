@@ -11,7 +11,7 @@ interface Question {
   id: string;
   created_at: string;
   category: string;
-  text_content: string;
+  text_content: string | null;
   image_url: string | null;
   options: string[];
   correct_option_index: number;
@@ -301,9 +301,11 @@ export default function StudentFeed({
                     </div>
 
                     {/* Question Content */}
-                    <h3 className="text-slate-100 font-medium text-base leading-relaxed mb-5 whitespace-pre-wrap">
-                      {q.text_content}
-                    </h3>
+                    {q.text_content && (
+                      <h3 className="text-slate-100 font-medium text-base leading-relaxed mb-5 whitespace-pre-wrap">
+                        {q.text_content}
+                      </h3>
+                    )}
 
                     {/* Question Image if present */}
                     {q.image_url && (
@@ -404,9 +406,11 @@ export default function StudentFeed({
                       </span>
                     </div>
 
-                    <p className="text-slate-200 font-medium text-sm leading-relaxed mb-4 whitespace-pre-wrap">
-                      {q.text_content}
-                    </p>
+                    {q.text_content && (
+                      <p className="text-slate-200 font-medium text-sm leading-relaxed mb-4 whitespace-pre-wrap">
+                        {q.text_content}
+                      </p>
+                    )}
 
                     {q.image_url && (
                       <div className="mb-4 rounded-lg overflow-hidden border border-slate-800 bg-slate-950/80 max-h-48 flex justify-center">

@@ -9,7 +9,7 @@ interface Question {
   id: string;
   created_at: string;
   category: string;
-  text_content: string;
+  text_content: string | null;
   image_url: string | null;
   options: string[];
   correct_option_index: number;
@@ -64,8 +64,8 @@ export default function TeacherDashboard({ initialQuestions, user }: TeacherDash
     const options = [optionA, optionB, optionC, optionD];
 
     // Validation
-    if (!textContent.trim()) {
-      setError('Question text is required.');
+    if (!textContent.trim() && !imageFile) {
+      setError('Please enter question text or select an image.');
       setLoading(false);
       return;
     }
@@ -195,7 +195,6 @@ export default function TeacherDashboard({ initialQuestions, user }: TeacherDash
                   onChange={(e) => setTextContent(e.target.value)}
                   placeholder="Type the question details here..."
                   className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-none"
-                  required
                 />
               </div>
 
@@ -349,9 +348,11 @@ export default function TeacherDashboard({ initialQuestions, user }: TeacherDash
                   </div>
 
                   {/* Text Content */}
-                  <p className="text-slate-100 font-medium text-sm leading-relaxed mb-4 whitespace-pre-wrap">
-                    {q.text_content}
-                  </p>
+                  {q.text_content && (
+                    <p className="text-slate-100 font-medium text-sm leading-relaxed mb-4 whitespace-pre-wrap">
+                      {q.text_content}
+                    </p>
+                  )}
 
                   {/* Question Image if present */}
                   {q.image_url && (
