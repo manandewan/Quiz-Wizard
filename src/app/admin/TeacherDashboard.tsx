@@ -121,8 +121,8 @@ export default function TeacherDashboard({ initialQuestions, user }: TeacherDash
       {/* Top Navigation */}
       <header className="glass-panel sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            QuizWizard Admin
+          <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+            Aptify Admin
           </span>
           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
             Teacher Portal

@@ -51,8 +51,8 @@ export default function StudentLoginPage() {
       <div className="w-full max-w-md animate-fade-in z-10">
         {/* Title / Branding */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            IMS Ludhiana Present's QuizWizard
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Aptify
           </h1>
           <p className="text-sm text-slate-400 mt-2">
             Practice Aptitude Questions In Real Time

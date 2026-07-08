@@ -136,8 +136,8 @@ export default function StudentFeed({
       {/* Top Header */}
       <header className="glass-panel sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <Link href="/student/feed" className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
-            IMS Ludhiana Present's QuizWizard
+          <Link href="/student/feed" className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+            Aptify
           </Link>
           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             Student Portal

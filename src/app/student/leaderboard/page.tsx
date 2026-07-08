@@ -36,9 +36,9 @@ export default async function LeaderboardPage() {
         <div className="flex items-center gap-3">
           <Link 
             href={user.role === 'student' ? '/student/feed' : '/admin'} 
-            className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent"
+            className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent"
           >
-            IMS Ludhiana Present's QuizWizard
+            Aptify
           </Link>
           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             Leaderboard

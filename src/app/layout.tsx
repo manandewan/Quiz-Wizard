@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IMS Ludhiana Present's QuizWizard",
+  title: "Aptify",
   description: "Real-time interactive multiple-choice question platform for quantitative and verbal aptitude preparation.",
 };
 
