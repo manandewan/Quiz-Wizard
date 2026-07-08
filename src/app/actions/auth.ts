@@ -99,40 +99,50 @@ export async function studentLogout(): Promise<AuthResult> {
 }
 
 // Teacher Login Action
-export async function teacherLogin(email: string, password: string): Promise<AuthResult> {
-  const trimmedEmail = email.trim();
-  if (!trimmedEmail || !password) {
-    return { success: false, error: 'Email and password are required.' };
+export async function teacherLogin(teacherId: string, password: string): Promise<AuthResult> {
+  const trimmedId = teacherId.trim();
+  if (trimmedId !== 'imsludhiana' || password !== '123456') {
+    return { success: false, error: 'Invalid Teacher ID or password.' };
   }
 
   try {
-    // 1. Sign in using Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password: password,
-    });
-
-    if (authError || !authData.user) {
-      return { success: false, error: authError?.message || 'Authentication failed.' };
-    }
-
-    // 2. Double check role in our public.users table
+    // Check if the teacher user exists in the public database users table
     const { data: user, error: dbError } = await supabase
       .from('users')
       .select('*')
-      .eq('id', authData.user.id)
       .eq('role', 'teacher')
       .maybeSingle();
 
-    if (dbError || !user) {
-      // Sign out from Supabase Auth to keep state consistent
-      await supabase.auth.signOut();
-      return { success: false, error: 'Access denied: You are not registered as a teacher.' };
+    if (dbError) {
+      console.error('Error fetching teacher user:', dbError);
+      return { success: false, error: 'Database connection failed.' };
     }
 
-    // 3. Create JWT Session Cookie
+    let targetUser = user;
+
+    // If teacher user doesn't exist for some reason, create a default one
+    if (!user) {
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: 'd3b07384-d113-4e4e-9c76-2e8b61c94441',
+          name: 'Teacher Admin',
+          role: 'teacher',
+          total_score: 0,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error inserting default teacher user:', insertError);
+        return { success: false, error: 'Failed to configure teacher user in database.' };
+      }
+      targetUser = newUser;
+    }
+
+    // Create JWT Session Cookie for Teacher
     const token = jwt.sign(
-      { id: user.id, name: user.name, role: 'teacher', email: authData.user.email },
+      { id: targetUser.id, name: targetUser.name, role: 'teacher', email: 'teacher@testprep.com' },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -156,7 +166,6 @@ export async function teacherLogin(email: string, password: string): Promise<Aut
 // Teacher Logout Action
 export async function teacherLogout(): Promise<AuthResult> {
   try {
-    await supabase.auth.signOut();
     const cookieStore = await cookies();
     cookieStore.delete('teacher-session');
     return { success: true };

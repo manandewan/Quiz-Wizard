@@ -6,7 +6,7 @@ import { teacherLogin } from '@/app/actions/auth';
 
 export default function TeacherLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [teacherId, setTeacherId] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,14 +16,14 @@ export default function TeacherLoginPage() {
     setLoading(true);
     setError(null);
 
-    if (!email.trim() || !password) {
-      setError('Please enter both email and password.');
+    if (!teacherId.trim() || !password) {
+      setError('Please enter both Teacher ID and password.');
       setLoading(false);
       return;
     }
 
     try {
-      const result = await teacherLogin(email, password);
+      const result = await teacherLogin(teacherId, password);
       if (result.success) {
         router.push('/admin');
       } else {
@@ -56,7 +56,7 @@ export default function TeacherLoginPage() {
           <div className="absolute -top-px left-10 right-10 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
           
           <h2 className="text-lg font-semibold text-slate-200 mb-6 text-center">
-            Sign In with Email & Password
+            Sign In with Teacher Credentials
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6" id="teacher-login-form">
@@ -69,19 +69,19 @@ export default function TeacherLoginPage() {
               </div>
             )}
 
-            {/* Email Input */}
+            {/* Teacher ID Input */}
             <div className="space-y-1.5">
-              <label htmlFor="email" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Email Address
+              <label htmlFor="teacherId" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Teacher ID
               </label>
               <input
-                type="email"
-                id="email"
-                name="email"
+                type="text"
+                id="teacherId"
+                name="teacherId"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="teacher@testprep.com"
+                value={teacherId}
+                onChange={(e) => setTeacherId(e.target.value)}
+                placeholder="e.g. imsludhiana"
                 className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
                 disabled={loading}
               />
@@ -99,7 +99,7 @@ export default function TeacherLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="••••••"
                 className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
                 disabled={loading}
               />
