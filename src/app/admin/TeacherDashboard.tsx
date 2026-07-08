@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { teacherLogout } from '@/app/actions/auth';
-import { createQuestion } from '@/app/actions/questions';
+import { createQuestion, deleteQuestion } from '@/app/actions/questions';
 import { supabase } from '@/lib/supabase';
 
 interface Question {
@@ -221,6 +221,28 @@ export default function TeacherDashboard({
       setLoading(false);
     }
   };
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const result = await deleteQuestion(questionId);
+      if (result.success) {
+        setSuccessMsg('Question deleted successfully!');
+        setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+        setAttempts((prev) => prev.filter((a) => a.question_id !== questionId));
+        router.refresh();
+      } else {
+        setError(result.error || 'Failed to delete question.');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   // --- Calculations for Analytics ---
   const stats = useMemo(() => {
@@ -568,9 +590,17 @@ export default function TeacherDashboard({
                 questions.map((q) => (
                   <div key={q.id} className="glass-panel rounded-xl p-5 border border-slate-800/80 shadow-md relative group">
                     <div className="flex items-center justify-between mb-3.5">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        {q.category === 'Quants' ? 'Quants' : 'Verbal'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          {q.category === 'Quants' ? 'Quants' : 'Verbal'}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteQuestion(q.id)}
+                          className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
                       <span className="text-[11px] text-slate-500 font-mono">
                         {new Date(q.created_at).toLocaleTimeString([], { 
                           hour: '2-digit', 
@@ -828,12 +858,20 @@ export default function TeacherDashboard({
 
                           {/* Detailed Actions */}
                           <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <button
-                              onClick={() => setSelectedQuestionForMetrics(q)}
-                              className="px-3 py-1.5 rounded bg-purple-500/10 hover:bg-purple-500/25 border border-purple-500/20 text-purple-400 text-xs font-bold active:scale-95 transition-all"
-                            >
-                              Metrics
-                            </button>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => setSelectedQuestionForMetrics(q)}
+                                className="px-3 py-1.5 rounded bg-purple-500/10 hover:bg-purple-500/25 border border-purple-500/20 text-purple-400 text-xs font-bold active:scale-95 transition-all"
+                              >
+                                Metrics
+                              </button>
+                              <button
+                                onClick={() => handleDeleteQuestion(q.id)}
+                                className="px-3 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 text-rose-400 text-xs font-bold active:scale-95 transition-all"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

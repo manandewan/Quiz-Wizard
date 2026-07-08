@@ -175,3 +175,56 @@ export async function attemptQuestion(
     return { success: false, error: 'An unexpected error occurred.' };
   }
 }
+
+// Action to delete an existing MCQ
+export async function deleteQuestion(
+  questionId: string
+): Promise<{ success: boolean; error?: string }> {
+  // 1. Verify that a teacher is making the request
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'teacher') {
+    return { success: false, error: 'Unauthorized: Only teachers can delete questions.' };
+  }
+
+  try {
+    // 2. Fetch the question to check if an image exists
+    const { data: question, error: fetchError } = await supabase
+      .from('questions')
+      .select('image_url')
+      .eq('id', questionId)
+      .single();
+
+    if (fetchError) {
+      return { success: false, error: `Failed to fetch question: ${fetchError.message}` };
+    }
+
+    // 3. Delete the image from storage bucket if present
+    if (question?.image_url) {
+      const fileName = question.image_url.split('/').pop();
+      if (fileName) {
+        const { error: storageError } = await supabase.storage
+          .from('question-images')
+          .remove([fileName]);
+        if (storageError) {
+          console.error('Error deleting question image from storage:', storageError);
+        }
+      }
+    }
+
+    // 4. Delete the question row from database (cascade deletes attempts automatically)
+    const { error: deleteError } = await supabase
+      .from('questions')
+      .delete()
+      .eq('id', questionId);
+
+    if (deleteError) {
+      return { success: false, error: `Failed to delete question: ${deleteError.message}` };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Delete question exception:', err);
+    return { success: false, error: 'An unexpected error occurred.' };
+  }
+}
+

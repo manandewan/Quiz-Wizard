@@ -125,6 +125,21 @@ export default async function LeaderboardPage() {
                           }`}>
                             {student.name}
                           </span>
+                          {rank === 1 && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">
+                              🥇 Gold
+                            </span>
+                          )}
+                          {rank === 2 && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200/15 text-slate-200 border border-slate-200/30">
+                              🥈 Silver
+                            </span>
+                          )}
+                          {rank === 3 && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-700/15 text-amber-600 border border-amber-700/30">
+                              🥉 Bronze
+                            </span>
+                          )}
                           {isSelf && (
                             <span className="ml-2 text-[9px] font-bold uppercase text-indigo-400 bg-indigo-500/20 px-1.5 py-0.5 rounded">
                               You

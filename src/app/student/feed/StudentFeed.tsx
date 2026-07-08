@@ -463,6 +463,17 @@ export default function StudentFeed({
                         );
                       })}
                     </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-900 space-y-1.5">
+                      <p className={`text-sm font-semibold ${wasCorrect ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        Your Answer: {selectedIdx !== undefined ? String.fromCharCode(65 + selectedIdx) : ''}. {selectedIdx !== undefined ? q.options[selectedIdx] : ''}
+                      </p>
+                      {!wasCorrect && (
+                        <p className="text-sm font-semibold text-emerald-400">
+                          Correct Answer: {String.fromCharCode(65 + correctIdx)}. {q.options[correctIdx]}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })
