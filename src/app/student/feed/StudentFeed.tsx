@@ -501,7 +501,7 @@ export default function StudentFeed({
                               </span>
                               <span className="break-words">{opt}</span>
                             </span>
-                            {isCorrect && (
+                            {isCorrect && !isSelected && (
                               <span className="text-[9px] font-bold uppercase text-emerald-400 shrink-0 mt-0.5">
                                 Correct Answer
                               </span>

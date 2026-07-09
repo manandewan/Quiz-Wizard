@@ -676,17 +676,19 @@ export default function TeacherDashboard({
                         return (
                           <div 
                             key={idx}
-                            className={`px-3 py-2 rounded-lg text-xs flex items-center justify-between border ${
+                            className={`px-3 py-2 rounded-lg text-xs flex flex-col gap-1.5 border ${
                               isCorrect 
                                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-semibold' 
                                 : 'bg-slate-900/60 text-slate-400 border-slate-800'
                             }`}
                           >
-                            <span className="truncate pr-2">{String.fromCharCode(65 + idx)}. {opt}</span>
+                            <span className="break-words">{String.fromCharCode(65 + idx)}. {opt}</span>
                             {isCorrect && (
-                              <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">
-                                Correct
-                              </span>
+                              <div className="flex">
+                                <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">
+                                  Correct
+                                </span>
+                              </div>
                             )}
                           </div>
                         );
@@ -991,14 +993,14 @@ export default function TeacherDashboard({
                 
                 return (
                   <div key={idx} className={`p-3 rounded-xl border ${highlightBorder} space-y-2`}>
-                    <div className="flex items-center justify-between text-xs font-medium">
-                      <div className="flex items-center gap-2 max-w-[70%]">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${pillColor}`}>
+                    <div className="flex items-start justify-between gap-3 text-xs font-medium">
+                      <div className="flex items-start gap-2">
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${pillColor}`}>
                           {String.fromCharCode(65 + idx)}
                         </span>
-                        <span className="truncate text-slate-200">{opt}</span>
+                        <span className="break-words text-slate-200 text-left">{opt}</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-mono">
+                      <span className="text-[11px] text-slate-400 font-mono shrink-0 mt-0.5">
                         {metrics.count} votes ({metrics.pct}%)
                       </span>
                     </div>
