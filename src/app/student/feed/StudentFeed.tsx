@@ -50,6 +50,7 @@ export default function StudentFeed({
   // Interactive Question State (to track current clicks/loading)
   const [attemptingId, setAttemptingId] = useState<string | null>(null);
   const [justAnswered, setJustAnswered] = useState<Record<string, { selected: number; correct: number }>>({});
+  const [selectedIndices, setSelectedIndices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -104,9 +105,20 @@ export default function StudentFeed({
     }
   };
 
-  // Option Click handler
-  const handleSelectOption = async (questionId: string, optionIdx: number) => {
-    if (isLoading) return; // Prevent double submits
+  // Stage selected option index locally
+  const handleSelectOption = (questionId: string, optionIdx: number) => {
+    if (isLoading) return;
+    setSelectedIndices((prev) => ({
+      ...prev,
+      [questionId]: optionIdx,
+    }));
+  };
+
+  // Confirm and submit staged selection
+  const handleConfirmAnswer = async (questionId: string) => {
+    const optionIdx = selectedIndices[questionId];
+    if (optionIdx === undefined || isLoading) return;
+
     setIsLoading(true);
     setAttemptingId(questionId);
 
@@ -321,6 +333,7 @@ export default function StudentFeed({
                         const isSelected = answerState?.selected === idx;
                         const isCorrect = answerState?.correct === idx;
                         const hasBeenAnswered = answerState !== undefined;
+                        const isPendingSelection = selectedIndices[q.id] === idx;
 
                         let optionStyle = 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300';
                         if (hasBeenAnswered) {
@@ -331,6 +344,8 @@ export default function StudentFeed({
                           } else {
                             optionStyle = 'bg-slate-950/50 border-slate-900 text-slate-600 opacity-60';
                           }
+                        } else if (isPendingSelection) {
+                          optionStyle = 'bg-indigo-500/10 border-indigo-500/80 text-indigo-200 font-semibold shadow-md shadow-indigo-500/5';
                         }
 
                         return (
@@ -361,6 +376,26 @@ export default function StudentFeed({
                         );
                       })}
                     </div>
+
+                    {/* Confirm Button */}
+                    {!justAnswered[q.id] && selectedIndices[q.id] !== undefined && (
+                      <div className="mt-4 flex justify-end animate-fade-in">
+                        <button
+                          onClick={() => handleConfirmAnswer(q.id)}
+                          disabled={isLoading}
+                          className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none shadow-md shadow-indigo-500/10 flex items-center justify-center gap-2"
+                        >
+                          {attemptingId === q.id ? (
+                            <>
+                              <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            'Confirm Answer'
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </article>
                 );
               })
