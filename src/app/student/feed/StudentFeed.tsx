@@ -338,22 +338,22 @@ export default function StudentFeed({
                             key={idx}
                             onClick={() => handleSelectOption(q.id, idx)}
                             disabled={hasBeenAnswered || isLoading}
-                            className={`w-full px-4 py-3.5 rounded-lg border text-left text-sm transition-all active:scale-[0.99] flex items-center justify-between group ${optionStyle} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`w-full px-4 py-3.5 rounded-lg border text-left text-sm transition-all active:scale-[0.99] flex items-start justify-between gap-3 group ${optionStyle} disabled:opacity-50 disabled:cursor-not-allowed`}
                           >
-                            <span className="truncate pr-4">
-                              <span className="font-bold text-slate-400 group-hover:text-slate-200 mr-2.5">
+                            <span className="flex items-start gap-2">
+                              <span className="font-bold text-slate-400 group-hover:text-slate-200 mt-0.5 shrink-0">
                                 {String.fromCharCode(65 + idx)}
                               </span>
-                              {opt}
+                              <span className="break-words">{opt}</span>
                             </span>
 
                             {hasBeenAnswered && isCorrect && (
-                              <span className="text-[10px] font-bold uppercase text-emerald-400 bg-emerald-500/25 px-2 py-0.5 rounded">
+                              <span className="text-[10px] font-bold uppercase text-emerald-400 bg-emerald-500/25 px-2 py-0.5 rounded shrink-0 mt-0.5">
                                 Correct
                               </span>
                             )}
                             {hasBeenAnswered && isSelected && !isCorrect && (
-                              <span className="text-[10px] font-bold uppercase text-rose-400 bg-rose-500/25 px-2 py-0.5 rounded">
+                              <span className="text-[10px] font-bold uppercase text-rose-400 bg-rose-500/25 px-2 py-0.5 rounded shrink-0 mt-0.5">
                                 Incorrect
                               </span>
                             )}
@@ -445,26 +445,26 @@ export default function StudentFeed({
                         return (
                           <div
                             key={idx}
-                            className={`px-4 py-3 rounded-lg border text-xs flex items-center justify-between ${style}`}
+                            className={`px-4 py-3 rounded-lg border text-xs flex items-start justify-between gap-3 ${style}`}
                           >
-                            <span>
-                              <span className="font-bold mr-2 text-slate-400">
+                            <span className="flex items-start gap-2">
+                              <span className="font-bold text-slate-400 shrink-0">
                                 {String.fromCharCode(65 + idx)}
                               </span>
-                              {opt}
+                              <span className="break-words">{opt}</span>
                             </span>
                             {isCorrect && (
-                              <span className="text-[9px] font-bold uppercase text-emerald-400">
+                              <span className="text-[9px] font-bold uppercase text-emerald-400 shrink-0 mt-0.5">
                                 Correct Answer
                               </span>
                             )}
                             {isSelected && !isCorrect && (
-                              <span className="text-[9px] font-bold uppercase text-rose-400">
+                              <span className="text-[9px] font-bold uppercase text-rose-400 shrink-0 mt-0.5">
                                 Your Selection
                               </span>
                             )}
                             {isSelected && isCorrect && (
-                              <span className="text-[9px] font-bold uppercase text-emerald-400">
+                              <span className="text-[9px] font-bold uppercase text-emerald-400 shrink-0 mt-0.5">
                                 Correct Selection
                               </span>
                             )}
