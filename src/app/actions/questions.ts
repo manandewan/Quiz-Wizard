@@ -16,7 +16,8 @@ export async function createQuestion(
   textContent: string,
   options: string[],
   correctOptionIndex: number,
-  imageFile?: File | null
+  imageFile?: File | null,
+  solutionImages?: (File | null)[]
 ): Promise<{ success: boolean; error?: string; question?: any }> {
   // 1. Verify that a teacher is making the request
   const user = await getCurrentUser();
@@ -41,6 +42,21 @@ export async function createQuestion(
       return { success: false, error: 'File must be an image.' };
     }
   }
+
+  // Validate each solution file
+  if (solutionImages && Array.isArray(solutionImages)) {
+    for (const file of solutionImages) {
+      if (file && file.size > 0) {
+        if (file.size > 5 * 1024 * 1024) {
+          return { success: false, error: 'Each solution image file size must be less than 5MB.' };
+        }
+        if (!file.type.startsWith('image/')) {
+          return { success: false, error: 'Each solution file must be an image.' };
+        }
+      }
+    }
+  }
+
   if (!Array.isArray(options) || options.length !== 4 || options.some(opt => typeof opt !== 'string' || !opt.trim())) {
     return { success: false, error: 'Please provide all 4 valid option choices as non-empty strings.' };
   }
@@ -49,8 +65,24 @@ export async function createQuestion(
   }
 
   let uploadedFileName: string | null = null;
+  const uploadedSolutionFileNames: string[] = [];
+
+  const cleanupImages = async () => {
+    const filesToCleanup: string[] = [];
+    if (uploadedFileName) filesToCleanup.push(uploadedFileName);
+    if (uploadedSolutionFileNames.length > 0) filesToCleanup.push(...uploadedSolutionFileNames);
+    if (filesToCleanup.length > 0) {
+      try {
+        await supabase.storage.from('question-images').remove(filesToCleanup);
+      } catch (cleanupErr) {
+        console.error('Error cleaning up uploaded images:', cleanupErr);
+      }
+    }
+  };
+
   try {
     let imageUrl = null;
+    const solutionImagesUrls: string[] = [];
 
     // 3. Upload Image to Supabase Storage if provided
     if (imageFile && imageFile.size > 0) {
@@ -61,7 +93,7 @@ export async function createQuestion(
       const arrayBuffer = await imageFile.arrayBuffer();
       const buffer = new Uint8Array(arrayBuffer);
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('question-images')
         .upload(fileName, buffer, {
           contentType: imageFile.type,
@@ -82,6 +114,42 @@ export async function createQuestion(
       imageUrl = publicUrlData.publicUrl;
     }
 
+    // 3b. Upload Solution Images if provided
+    if (solutionImages && Array.isArray(solutionImages)) {
+      for (const file of solutionImages) {
+        if (file && file.size > 0) {
+          const fileExt = file.name.split('.').pop() || 'png';
+          const fileName = `sol-${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+          
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = new Uint8Array(arrayBuffer);
+
+          const { error: uploadError } = await supabase.storage
+            .from('question-images')
+            .upload(fileName, buffer, {
+              contentType: file.type,
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Error uploading solution image:', uploadError);
+            await cleanupImages();
+            return { success: false, error: `Failed to upload solution image: ${uploadError.message}` };
+          }
+
+          uploadedSolutionFileNames.push(fileName);
+
+          // Retrieve public URL of the uploaded image
+          const { data: publicUrlData } = supabase.storage
+            .from('question-images')
+            .getPublicUrl(fileName);
+          
+          solutionImagesUrls.push(publicUrlData.publicUrl);
+        }
+      }
+    }
+
     // 4. Save question metadata to the database
     let newQuestion = null;
     let dbError = null;
@@ -94,6 +162,7 @@ export async function createQuestion(
           options: options.map(opt => opt.trim()),
           correct_option_index: correctOptionIndex,
           image_url: imageUrl,
+          solution_images: solutionImagesUrls,
         })
         .select()
         .single();
@@ -101,34 +170,20 @@ export async function createQuestion(
       dbError = error;
     } catch (dbErr) {
       console.error('Database query exception in createQuestion:', dbErr);
-      if (uploadedFileName) {
-        try {
-          await supabase.storage.from('question-images').remove([uploadedFileName]);
-        } catch (cleanupErr) {
-          console.error('Error cleaning up uploaded image:', cleanupErr);
-        }
-      }
+      await cleanupImages();
       return { success: false, error: 'Database connection failed while saving question.' };
     }
 
     if (dbError) {
       console.error('Error saving question:', dbError);
-      if (uploadedFileName) {
-        await supabase.storage.from('question-images').remove([uploadedFileName]);
-      }
+      await cleanupImages();
       return { success: false, error: `Failed to save question: ${dbError.message}` };
     }
 
     return { success: true, question: newQuestion };
   } catch (err) {
     console.error('Create question exception:', err);
-    if (uploadedFileName) {
-      try {
-        await supabase.storage.from('question-images').remove([uploadedFileName]);
-      } catch (cleanupErr) {
-        console.error('Error cleaning up uploaded image:', cleanupErr);
-      }
-    }
+    await cleanupImages();
     return { success: false, error: 'An unexpected error occurred.' };
   }
 }
@@ -209,7 +264,7 @@ export async function deleteQuestion(
     try {
       const { data, error } = await supabase
         .from('questions')
-        .select('image_url')
+        .select('image_url, solution_images')
         .eq('id', questionId)
         .single();
       question = data;
@@ -223,16 +278,27 @@ export async function deleteQuestion(
       return { success: false, error: `Failed to fetch question: ${fetchError.message}` };
     }
 
-    // 3. Delete the image from storage bucket if present
+    // 3. Delete all images from storage bucket in a batch
+    const filesList: string[] = [];
     if (question?.image_url) {
       const fileName = question.image_url.split('/').pop();
-      if (fileName) {
-        const { error: storageError } = await supabase.storage
-          .from('question-images')
-          .remove([fileName]);
-        if (storageError) {
-          console.error('Error deleting question image from storage:', storageError);
+      if (fileName) filesList.push(fileName);
+    }
+    if (question?.solution_images && Array.isArray(question.solution_images)) {
+      for (const url of question.solution_images) {
+        if (url) {
+          const fileName = url.split('/').pop();
+          if (fileName) filesList.push(fileName);
         }
+      }
+    }
+
+    if (filesList.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('question-images')
+        .remove(filesList);
+      if (storageError) {
+        console.error('Error deleting question images from storage:', storageError);
       }
     }
 

@@ -14,6 +14,7 @@ interface Question {
   image_url: string | null;
   options: string[];
   correct_option_index: number;
+  solution_images?: string[];
 }
 
 interface Attempt {
@@ -47,6 +48,7 @@ export default function TeacherDashboard({
 }: TeacherDashboardProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const solutionInputRef = useRef<HTMLInputElement>(null);
 
   // Core list states
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
@@ -72,6 +74,7 @@ export default function TeacherDashboard({
   const [optionD, setOptionD] = useState('');
   const [correctOptionIndex, setCorrectOptionIndex] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [solutionFiles, setSolutionFiles] = useState<File[]>([]);
 
   // UI state feedback
   const [loading, setLoading] = useState(false);
@@ -175,6 +178,12 @@ export default function TeacherDashboard({
     }
   };
 
+  const handleSolutionFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSolutionFiles(Array.from(e.target.files));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -213,13 +222,34 @@ export default function TeacherDashboard({
       }
     }
 
+    // Solution files safety & type checks
+    if (solutionFiles && solutionFiles.length > 0) {
+      for (const file of solutionFiles) {
+        if (file.size > 5 * 1024 * 1024) {
+          const errorMsg = `Solution image "${file.name}" size must be less than or equal to 5MB.`;
+          setError(errorMsg);
+          alert(errorMsg);
+          setIsSubmitting(false);
+          return;
+        }
+        if (!file.type.startsWith('image/')) {
+          const errorMsg = `Selected solution file "${file.name}" must be an image.`;
+          setError(errorMsg);
+          alert(errorMsg);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+    }
+
     try {
       const result = await createQuestion(
         category,
         textContent,
         options,
         correctOptionIndex,
-        imageFile
+        imageFile,
+        solutionFiles
       );
 
       if (result.success) {
@@ -233,7 +263,9 @@ export default function TeacherDashboard({
         setOptionD('');
         setCorrectOptionIndex(0);
         setImageFile(null);
+        setSolutionFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = '';
+        if (solutionInputRef.current) solutionInputRef.current.value = '';
 
         if (result.question) {
           const newQuestion = result.question as Question;
@@ -521,6 +553,48 @@ export default function TeacherDashboard({
                     <span className="text-xs text-slate-400 truncate max-w-[200px]">
                       {imageFile ? imageFile.name : 'No image selected'}
                     </span>
+                  </div>
+                </div>
+
+                {/* Detailed Solution Images (Optional) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                    Detailed Solution Images (Optional)
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="file"
+                        id="solutionImagesUpload"
+                        multiple
+                        accept="image/*"
+                        ref={solutionInputRef}
+                        onChange={handleSolutionFilesChange}
+                        disabled={isSubmitting}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => solutionInputRef.current?.click()}
+                        disabled={isSubmitting}
+                        className="px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-855 border border-slate-800 text-slate-300 text-xs font-semibold active:scale-[0.97] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        Select Files
+                      </button>
+                      <span className="text-xs text-slate-400">
+                        {solutionFiles.length > 0 ? `${solutionFiles.length} file(s) selected` : 'No files selected'}
+                      </span>
+                    </div>
+                    {solutionFiles.length > 0 && (
+                      <div className="pl-1 space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
+                        {solutionFiles.map((file, idx) => (
+                          <div key={idx} className="text-xs text-slate-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
+                            <span className="truncate">{file.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -932,103 +1006,151 @@ export default function TeacherDashboard({
       {/* --- Detailed Metrics Modal --- */}
       {selectedQuestionForMetrics && selectedQuestionMetricsDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="glass-panel rounded-xl p-6 max-w-lg w-full shadow-2xl relative border border-slate-800 animate-slide-up flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-850 mb-5">
-              <h3 className="text-base font-bold text-slate-200">Question Metrics Breakdown</h3>
-              <button
-                onClick={() => setSelectedQuestionForMetrics(null)}
-                className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 flex items-center justify-center text-sm font-semibold active:scale-90 transition-all"
-              >
-                ✕
-              </button>
-            </div>
+          {(() => {
+            const questionAttempts = attempts.filter(a => a.question_id === selectedQuestionForMetrics.id);
+            const studentAttempts = questionAttempts.map(attempt => {
+              const student = students.find(s => s.id === attempt.user_id);
+              return {
+                ...attempt,
+                studentName: student ? student.name : 'Unknown Student'
+              };
+            });
 
-            {/* Question Details Preview inside modal */}
-            <div className="bg-slate-950/40 rounded-lg p-3 border border-slate-900 mb-5 max-h-36 overflow-y-auto custom-scrollbar">
-              <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-2 inline-block">
-                {selectedQuestionForMetrics.category === 'Quants' ? 'Quants' : 'Verbal'}
-              </span>
-              {selectedQuestionForMetrics.text_content && (
-                <p className="text-xs text-slate-300 font-medium leading-relaxed whitespace-pre-wrap">
-                  {selectedQuestionForMetrics.text_content}
-                </p>
-              )}
-              {selectedQuestionForMetrics.image_url && (
-                <div className="mt-2 rounded overflow-hidden border border-slate-900 max-h-24 flex justify-center bg-slate-950">
-                  <img src={selectedQuestionForMetrics.image_url} alt="preview" className="object-contain max-h-24" />
+            return (
+              <div className="glass-panel rounded-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl relative border border-slate-800 animate-slide-up flex flex-col">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between pb-4 border-b border-slate-850 mb-5">
+                  <h3 className="text-base font-bold text-slate-200">Question Metrics Breakdown</h3>
+                  <button
+                    onClick={() => setSelectedQuestionForMetrics(null)}
+                    className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 flex items-center justify-center text-sm font-semibold active:scale-90 transition-all"
+                  >
+                    ✕
+                  </button>
                 </div>
-              )}
-            </div>
 
-            {/* Detailed Attempt Stats Summary */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-850/80 text-center">
-                <p className="text-[10px] text-slate-500 uppercase font-semibold">Total Attempts</p>
-                <h4 className="text-lg font-bold text-slate-200 font-mono mt-0.5">{selectedQuestionMetricsDetails.total}</h4>
-              </div>
-              <div className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-850/80 text-center">
-                <p className="text-[10px] text-slate-500 uppercase font-semibold">Correct</p>
-                <h4 className="text-lg font-bold text-emerald-400 font-mono mt-0.5">{selectedQuestionMetricsDetails.correct}</h4>
-              </div>
-              <div className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-850/80 text-center">
-                <p className="text-[10px] text-slate-500 uppercase font-semibold">Incorrect</p>
-                <h4 className="text-lg font-bold text-rose-400 font-mono mt-0.5">
-                  {selectedQuestionMetricsDetails.total - selectedQuestionMetricsDetails.correct}
-                </h4>
-              </div>
-            </div>
-
-            {/* Option Selections Breakdown Bars */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Selections Distribution</h4>
-              
-              {selectedQuestionForMetrics.options.map((opt, idx) => {
-                const isCorrect = selectedQuestionForMetrics.correct_option_index === idx;
-                const metrics = selectedQuestionMetricsDetails.distribution[idx];
-                
-                // Determine layout highlight
-                const highlightBorder = isCorrect ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-slate-850 bg-slate-900/20';
-                const pillColor = isCorrect ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' : 'bg-slate-800 text-slate-400';
-                
-                return (
-                  <div key={idx} className={`p-3 rounded-xl border ${highlightBorder} space-y-2`}>
-                    <div className="flex items-start justify-between gap-3 text-xs font-medium">
-                      <div className="flex items-start gap-2">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${pillColor}`}>
-                          {String.fromCharCode(65 + idx)}
-                        </span>
-                        <span className="break-words text-slate-200 text-left">{opt}</span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 font-mono shrink-0 mt-0.5">
-                        {metrics.count} votes ({metrics.pct}%)
-                      </span>
+                {/* Question Details Preview inside modal */}
+                <div className="bg-slate-950/40 rounded-lg p-3 border border-slate-900 mb-5 max-h-36 overflow-y-auto custom-scrollbar">
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-2 inline-block">
+                    {selectedQuestionForMetrics.category === 'Quants' ? 'Quants' : 'Verbal'}
+                  </span>
+                  {selectedQuestionForMetrics.text_content && (
+                    <p className="text-xs text-slate-300 font-medium leading-relaxed whitespace-pre-wrap">
+                      {selectedQuestionForMetrics.text_content}
+                    </p>
+                  )}
+                  {selectedQuestionForMetrics.image_url && (
+                    <div className="mt-2 rounded overflow-hidden border border-slate-900 max-h-24 flex justify-center bg-slate-950">
+                      <img src={selectedQuestionForMetrics.image_url} alt="preview" className="object-contain max-h-24" />
                     </div>
+                  )}
+                </div>
 
-                    {/* Progress Bar representation */}
-                    <div className="w-full h-2.5 rounded-full bg-slate-950/80 border border-slate-900 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isCorrect ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-purple-500/40 to-pink-500/40'
-                        }`}
-                        style={{ width: `${metrics.pct}%` }}
-                      />
-                    </div>
+                {/* Detailed Attempt Stats Summary */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-850/80 text-center">
+                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Total Attempts</p>
+                    <h4 className="text-lg font-bold text-slate-200 font-mono mt-0.5">{selectedQuestionMetricsDetails.total}</h4>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-850/80 text-center">
+                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Correct</p>
+                    <h4 className="text-lg font-bold text-emerald-400 font-mono mt-0.5">{selectedQuestionMetricsDetails.correct}</h4>
+                  </div>
+                  <div className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-850/80 text-center">
+                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Incorrect</p>
+                    <h4 className="text-lg font-bold text-rose-400 font-mono mt-0.5">
+                      {selectedQuestionMetricsDetails.total - selectedQuestionMetricsDetails.correct}
+                    </h4>
+                  </div>
+                </div>
 
-            {/* Modal Close Action Footer */}
-            <div className="mt-6 pt-4 border-t border-slate-850 flex justify-end">
-              <button
-                onClick={() => setSelectedQuestionForMetrics(null)}
-                className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold active:scale-95 transition-all"
-              >
-                Close
-              </button>
-            </div>
-          </div>
+                {/* Option Selections Breakdown Bars */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Selections Distribution</h4>
+                  
+                  {selectedQuestionForMetrics.options.map((opt, idx) => {
+                    const isCorrect = selectedQuestionForMetrics.correct_option_index === idx;
+                    const metrics = selectedQuestionMetricsDetails.distribution[idx];
+                    
+                    // Determine layout highlight
+                    const highlightBorder = isCorrect ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-slate-850 bg-slate-900/20';
+                    const pillColor = isCorrect ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' : 'bg-slate-800 text-slate-400';
+                    
+                    return (
+                      <div key={idx} className={`p-3 rounded-xl border ${highlightBorder} space-y-2`}>
+                        <div className="flex items-start justify-between gap-3 text-xs font-medium">
+                          <div className="flex items-start gap-2">
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${pillColor}`}>
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span className="break-words text-slate-200 text-left">{opt}</span>
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-mono shrink-0 mt-0.5">
+                            {metrics.count} votes ({metrics.pct}%)
+                          </span>
+                        </div>
+
+                        {/* Progress Bar representation */}
+                        <div className="w-full h-2.5 rounded-full bg-slate-950/80 border border-slate-900 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isCorrect ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-purple-500/40 to-pink-500/40'
+                            }`}
+                            style={{ width: `${metrics.pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Student Attempts List */}
+                <div className="mt-6 space-y-3">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Students Attempted</h4>
+                  
+                  {studentAttempts.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic py-2">No attempts logged for this question yet.</p>
+                  ) : (
+                    <div className="max-h-44 overflow-y-auto border border-slate-900 bg-slate-950/20 rounded-xl divide-y divide-slate-900/60 custom-scrollbar">
+                      {studentAttempts.map((att) => (
+                        <div key={att.id} className="p-3 flex items-center justify-between text-xs gap-3">
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-semibold text-slate-200 truncate capitalize">{att.studentName}</span>
+                            <span className="text-[10px] text-slate-500">
+                              Selected Option {String.fromCharCode(65 + att.selected_option_index)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                              att.is_correct 
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            }`}>
+                              {att.is_correct ? 'Correct' : 'Incorrect'}
+                            </span>
+                            <span className="text-[9px] text-slate-500 font-mono hidden sm:inline">
+                              {new Date(att.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Close Action Footer */}
+                <div className="mt-6 pt-4 border-t border-slate-850 flex justify-end">
+                  <button
+                    onClick={() => setSelectedQuestionForMetrics(null)}
+                    className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold active:scale-95 transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

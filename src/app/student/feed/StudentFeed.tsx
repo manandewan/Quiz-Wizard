@@ -15,6 +15,7 @@ interface Question {
   image_url: string | null;
   options: string[];
   correct_option_index: number;
+  solution_images?: string[];
 }
 
 interface Attempt {
@@ -409,6 +410,29 @@ export default function StudentFeed({
                         </button>
                       </div>
                     )}
+
+                    {/* Detailed Solution rendering */}
+                    {justAnswered[q.id] && q.solution_images && q.solution_images.length > 0 && (
+                      <div className="mt-6 pt-4 border-t border-slate-900 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                            Detailed Solution
+                          </h4>
+                          <div className="flex-1 h-px bg-slate-900" />
+                        </div>
+                        <div className="flex flex-col gap-4 items-center">
+                          {q.solution_images.map((url, index) => (
+                            <div key={index} className="w-full max-w-lg rounded-lg overflow-hidden border border-slate-800 bg-slate-950/85 p-1 flex justify-center">
+                              <img
+                                src={url}
+                                alt={`Detailed Solution Step ${index + 1}`}
+                                className="object-contain w-full max-h-96"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </article>
                 );
               })
@@ -531,6 +555,29 @@ export default function StudentFeed({
                         </p>
                       )}
                     </div>
+
+                    {/* Detailed Solution rendering */}
+                    {q.solution_images && q.solution_images.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-slate-900 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                            Detailed Solution
+                          </h4>
+                          <div className="flex-1 h-px bg-slate-900" />
+                        </div>
+                        <div className="flex flex-col gap-4 items-center">
+                          {q.solution_images.map((url, index) => (
+                            <div key={index} className="w-full max-w-lg rounded-lg overflow-hidden border border-slate-800 bg-slate-950/85 p-1 flex justify-center">
+                              <img
+                                src={url}
+                                alt={`Detailed Solution Step ${index + 1}`}
+                                className="object-contain w-full max-h-96"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })

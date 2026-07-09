@@ -24,7 +24,8 @@ create table questions (
   text_content text not null,
   image_url text, -- Nullable if no image is uploaded
   options jsonb not null, -- A JSON array of 4 strings: ["Option A", "Option B", "Option C", "Option D"]
-  correct_option_index integer not null check (correct_option_index between 0 and 3)
+  correct_option_index integer not null check (correct_option_index between 0 and 3),
+  solution_images text[] default '{}'
 );
 
 -- 4. Attempts Table
