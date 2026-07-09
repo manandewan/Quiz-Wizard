@@ -324,9 +324,9 @@ export default function StudentFeed({
 
                     {/* Question Content */}
                     {q.text_content && (
-                      <h3 className="text-slate-100 font-medium text-base leading-relaxed mb-5 whitespace-pre-wrap">
+                      <p className="text-slate-200 font-normal text-sm md:text-base leading-relaxed mb-4 whitespace-pre-wrap">
                         {q.text_content}
-                      </h3>
+                      </p>
                     )}
 
                     {/* Question Image if present */}
@@ -463,7 +463,7 @@ export default function StudentFeed({
                     </div>
 
                     {q.text_content && (
-                      <p className="text-slate-200 font-medium text-sm leading-relaxed mb-4 whitespace-pre-wrap">
+                      <p className="text-slate-300 font-normal text-xs md:text-sm leading-relaxed mb-4 whitespace-pre-wrap">
                         {q.text_content}
                       </p>
                     )}
