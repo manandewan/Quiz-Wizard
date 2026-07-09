@@ -38,13 +38,13 @@ export async function studentLogin(name: string, pin: string): Promise<AuthResul
     let user = null;
     let fetchError = null;
     try {
-      const { data, error } = await supabase
+      const { data: users, error } = await supabase
         .from('users')
         .select('*')
         .ilike('name', trimmedName)
         .eq('role', 'student')
-        .maybeSingle();
-      user = data;
+        .limit(1);
+      user = users && users.length > 0 ? users[0] : null;
       fetchError = error;
     } catch (dbErr) {
       console.error('Database fetch exception in studentLogin:', dbErr);
