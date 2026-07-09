@@ -4,18 +4,20 @@ import { Client } from 'pg';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // Use the raw IPv6 address of the database directly in brackets to bypass DNS resolution blocks on Vercel
-  const connectionString = 'postgresql://postgres:imsludhiana%402026@[2406:da12:1f1:f802:f106:b3c3:dec1:1215]:5432/postgres';
-  
+  // Use config object with raw IPv6 host (no brackets) to force Node.js to skip DNS lookup completely
   const client = new Client({
-    connectionString,
+    host: '2406:da12:1f1:f802:f106:b3c3:dec1:1215',
+    port: 5432,
+    user: 'postgres',
+    password: 'imsludhiana@2026',
+    database: 'postgres',
     ssl: { rejectUnauthorized: false }
   });
 
   const logs: string[] = [];
 
   try {
-    logs.push('Connecting to database directly via raw IPv6 address...');
+    logs.push('Connecting to database directly via raw IPv6 host configuration...');
     await client.connect();
     logs.push('Connected to Database successfully!');
 
