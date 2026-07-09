@@ -127,7 +127,7 @@ export default async function LeaderboardPage() {
                       <div className="flex items-center gap-4">
                         {rankBadge}
                         <div>
-                          <span className={`text-sm font-medium ${
+                          <span className={`text-sm font-medium capitalize ${
                             isSelf ? 'text-indigo-400 font-bold' : 'text-slate-200'
                           }`}>
                             {student.name}

@@ -22,7 +22,7 @@ export interface AuthResult {
 // Student Login & Frictionless Registration Action
 export async function studentLogin(name: string, pin: string): Promise<AuthResult> {
   // Validate inputs
-  const trimmedName = name.trim();
+  const trimmedName = name.trim().toLowerCase();
   if (!trimmedName) {
     return { success: false, error: 'Full Name is required.' };
   }
@@ -38,13 +38,13 @@ export async function studentLogin(name: string, pin: string): Promise<AuthResul
     let user = null;
     let fetchError = null;
     try {
-      const { data: users, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
-        .ilike('name', trimmedName)
+        .eq('name', trimmedName)
         .eq('role', 'student')
-        .limit(1);
-      user = users && users.length > 0 ? users[0] : null;
+        .maybeSingle();
+      user = data;
       fetchError = error;
     } catch (dbErr) {
       console.error('Database fetch exception in studentLogin:', dbErr);

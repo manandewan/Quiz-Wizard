@@ -199,7 +199,7 @@ export default function StudentFeed({
         <div className="flex items-center justify-between md:justify-end gap-4 md:gap-6">
           <div className="text-left md:text-right">
             <span className="text-[10px] md:text-xs text-slate-400 block leading-tight">Welcome back,</span>
-            <p className="text-xs md:text-sm font-semibold text-slate-200 leading-tight">{user.name}</p>
+            <p className="text-xs md:text-sm font-semibold text-slate-200 leading-tight capitalize">{user.name}</p>
           </div>
 
           {/* Score Indicator (Desktop Only) */}
