@@ -50,6 +50,8 @@ export default function StudentFeed({
   // Interactive Question State (to track current clicks/loading)
   const [attemptingId, setAttemptingId] = useState<string | null>(null);
   const [justAnswered, setJustAnswered] = useState<Record<string, { selected: number; correct: number }>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // 1. Subscribe to real-time questions updates
   useEffect(() => {
@@ -86,15 +88,26 @@ export default function StudentFeed({
 
   // Logout handler
   const handleLogout = async () => {
-    const result = await studentLogout();
-    if (result.success) {
-      router.push('/');
+    setIsLoggingOut(true);
+    try {
+      const result = await studentLogout();
+      if (result.success) {
+        router.push('/');
+      } else {
+        alert(result.error || 'Failed to log out.');
+        setIsLoggingOut(false);
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+      alert('An error occurred during logout.');
+      setIsLoggingOut(false);
     }
   };
 
   // Option Click handler
-  const handleOptionClick = async (questionId: string, optionIdx: number) => {
-    if (attemptingId) return; // Prevent double submits
+  const handleSelectOption = async (questionId: string, optionIdx: number) => {
+    if (isLoading) return; // Prevent double submits
+    setIsLoading(true);
     setAttemptingId(questionId);
 
     try {
@@ -119,7 +132,9 @@ export default function StudentFeed({
       }
     } catch (err) {
       console.error('Error submitting answer:', err);
+      alert('An error occurred while submitting your answer. Please try again.');
     } finally {
+      setIsLoading(false);
       setAttemptingId(null);
     }
   };
@@ -172,9 +187,10 @@ export default function StudentFeed({
             <button
               onClick={handleLogout}
               id="student-logout-btn"
-              className="px-3.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800 hover:bg-slate-800 hover:text-slate-100 text-slate-400 text-xs font-semibold active:scale-[0.97] transition-all"
+              disabled={isLoggingOut}
+              className="px-3.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800 hover:bg-slate-800 hover:text-slate-100 text-slate-400 text-xs font-semibold active:scale-[0.97] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
-              Log Out
+              {isLoggingOut ? 'Logging out...' : 'Log Out'}
             </button>
           </nav>
         </div>
@@ -311,9 +327,9 @@ export default function StudentFeed({
                         return (
                           <button
                             key={idx}
-                            onClick={() => handleOptionClick(q.id, idx)}
-                            disabled={hasBeenAnswered || attemptingId === q.id}
-                            className={`w-full px-4 py-3.5 rounded-lg border text-left text-sm transition-all active:scale-[0.99] flex items-center justify-between group ${optionStyle}`}
+                            onClick={() => handleSelectOption(q.id, idx)}
+                            disabled={hasBeenAnswered || isLoading}
+                            className={`w-full px-4 py-3.5 rounded-lg border text-left text-sm transition-all active:scale-[0.99] flex items-center justify-between group ${optionStyle} disabled:opacity-50 disabled:cursor-not-allowed`}
                           >
                             <span className="truncate pr-4">
                               <span className="font-bold text-slate-400 group-hover:text-slate-200 mr-2.5">

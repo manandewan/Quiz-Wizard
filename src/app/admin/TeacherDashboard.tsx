@@ -77,6 +77,9 @@ export default function TeacherDashboard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Real-time updates subscription for Questions, Attempts, and Student Users
   useEffect(() => {
@@ -150,9 +153,19 @@ export default function TeacherDashboard({
   }, []);
 
   const handleLogout = async () => {
-    const result = await teacherLogout();
-    if (result.success) {
-      router.push('/admin/login');
+    setIsLoggingOut(true);
+    try {
+      const result = await teacherLogout();
+      if (result.success) {
+        router.push('/admin/login');
+      } else {
+        setError(result.error || 'Failed to log out.');
+        setIsLoggingOut(false);
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+      setError('An unexpected error occurred during logout.');
+      setIsLoggingOut(false);
     }
   };
 
@@ -164,7 +177,7 @@ export default function TeacherDashboard({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSubmitting(true);
     setError(null);
     setSuccessMsg(null);
 
@@ -173,13 +186,31 @@ export default function TeacherDashboard({
     // Validation
     if (!textContent.trim() && !imageFile) {
       setError('Please enter question text or select an image.');
-      setLoading(false);
+      setIsSubmitting(false);
       return;
     }
     if (options.some((opt) => !opt.trim())) {
       setError('All 4 options must be filled out.');
-      setLoading(false);
+      setIsSubmitting(false);
       return;
+    }
+
+    // Image safety & type checks
+    if (imageFile) {
+      if (imageFile.size > 5 * 1024 * 1024) {
+        const errorMsg = 'Image file size must be less than or equal to 5MB.';
+        setError(errorMsg);
+        alert(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+      if (!imageFile.type.startsWith('image/')) {
+        const errorMsg = 'Selected file must be of an image type.';
+        setError(errorMsg);
+        alert(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     try {
@@ -218,12 +249,12 @@ export default function TeacherDashboard({
     } catch (err) {
       setError('An unexpected error occurred.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteQuestion = async (questionId: string) => {
-    setLoading(true);
+    setDeletingId(questionId);
     setError(null);
     setSuccessMsg(null);
     try {
@@ -239,7 +270,7 @@ export default function TeacherDashboard({
     } catch (err) {
       setError('An unexpected error occurred.');
     } finally {
-      setLoading(false);
+      setDeletingId(null);
     }
   };
 
@@ -369,9 +400,10 @@ export default function TeacherDashboard({
           <button
             onClick={handleLogout}
             id="admin-logout-btn"
-            className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-semibold active:scale-[0.97] transition-all"
+            disabled={isLoggingOut}
+            className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-semibold active:scale-[0.97] transition-all disabled:opacity-50 disabled:pointer-events-none"
           >
-            Log Out
+            {isLoggingOut ? 'Logging out...' : 'Log Out'}
           </button>
         </div>
       </header>
@@ -439,7 +471,8 @@ export default function TeacherDashboard({
                     id="category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors disabled:opacity-50"
                   >
                     <option value="Quants">Quants (Quantitative Aptitude)</option>
                     <option value="VA/RC">VA/RC (Verbal Ability & Reading Comprehension)</option>
@@ -456,8 +489,9 @@ export default function TeacherDashboard({
                     rows={4}
                     value={textContent}
                     onChange={(e) => setTextContent(e.target.value)}
+                    disabled={isSubmitting}
                     placeholder="Type the question details here..."
-                    className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-none"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-none disabled:opacity-50"
                   />
                 </div>
 
@@ -473,12 +507,14 @@ export default function TeacherDashboard({
                       accept="image/*"
                       ref={fileInputRef}
                       onChange={handleFileChange}
+                      disabled={isSubmitting}
                       className="hidden"
                     />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold active:scale-[0.97] transition-all"
+                      disabled={isSubmitting}
+                      className="px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-855 border border-slate-800 text-slate-300 text-xs font-semibold active:scale-[0.97] transition-all disabled:opacity-50 disabled:pointer-events-none"
                     >
                       Select File
                     </button>
@@ -500,8 +536,9 @@ export default function TeacherDashboard({
                       required
                       value={optionA}
                       onChange={(e) => setOptionA(e.target.value)}
+                      disabled={isSubmitting}
                       placeholder="Enter option A content"
-                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors"
+                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div className="flex items-center gap-3">
@@ -511,8 +548,9 @@ export default function TeacherDashboard({
                       required
                       value={optionB}
                       onChange={(e) => setOptionB(e.target.value)}
+                      disabled={isSubmitting}
                       placeholder="Enter option B content"
-                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors"
+                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div className="flex items-center gap-3">
@@ -522,8 +560,9 @@ export default function TeacherDashboard({
                       required
                       value={optionC}
                       onChange={(e) => setOptionC(e.target.value)}
+                      disabled={isSubmitting}
                       placeholder="Enter option C content"
-                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors"
+                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors disabled:opacity-50"
                     />
                   </div>
                   <div className="flex items-center gap-3">
@@ -533,8 +572,9 @@ export default function TeacherDashboard({
                       required
                       value={optionD}
                       onChange={(e) => setOptionD(e.target.value)}
+                      disabled={isSubmitting}
                       placeholder="Enter option D content"
-                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors"
+                      className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition-colors disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -548,7 +588,8 @@ export default function TeacherDashboard({
                     id="correctAnswer"
                     value={correctOptionIndex}
                     onChange={(e) => setCorrectOptionIndex(parseInt(e.target.value))}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors disabled:opacity-50"
                   >
                     <option value={0}>Option A is Correct</option>
                     <option value={1}>Option B is Correct</option>
@@ -560,10 +601,10 @@ export default function TeacherDashboard({
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={isSubmitting}
                   className="w-full py-3.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold text-sm shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {loading ? 'Publishing...' : 'Publish Question'}
+                  {isSubmitting ? 'Publishing...' : 'Publish Question'}
                 </button>
               </form>
             </div>
@@ -596,9 +637,10 @@ export default function TeacherDashboard({
                         </span>
                         <button
                           onClick={() => handleDeleteQuestion(q.id)}
-                          className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors"
+                          disabled={deletingId !== null}
+                          className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                         >
-                          Delete
+                          {deletingId === q.id ? 'Deleting...' : 'Delete'}
                         </button>
                       </div>
                       <span className="text-[11px] text-slate-500 font-mono">
@@ -867,9 +909,10 @@ export default function TeacherDashboard({
                               </button>
                               <button
                                 onClick={() => handleDeleteQuestion(q.id)}
-                                className="px-3 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 text-rose-400 text-xs font-bold active:scale-95 transition-all"
+                                disabled={deletingId !== null}
+                                className="px-3 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 text-rose-400 text-xs font-bold active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
                               >
-                                Delete
+                                {deletingId === q.id ? 'Deleting...' : 'Delete'}
                               </button>
                             </div>
                           </td>

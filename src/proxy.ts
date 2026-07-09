@@ -13,7 +13,15 @@ function isSessionValid(cookieValue: string | undefined, expectedRole: string): 
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const paddedBase64 = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
     
-    const payloadJson = atob(paddedBase64);
+    let payloadJson;
+    try {
+      const raw = atob(paddedBase64);
+      payloadJson = decodeURIComponent(
+        raw.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+      );
+    } catch {
+      payloadJson = atob(paddedBase64);
+    }
     const payload = JSON.parse(payloadJson);
     
     // Validate role and expiration date
