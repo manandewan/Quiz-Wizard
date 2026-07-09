@@ -41,7 +41,7 @@ export async function studentLogin(name: string, pin: string): Promise<AuthResul
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('name', trimmedName)
+        .ilike('name', trimmedName)
         .eq('role', 'student')
         .maybeSingle();
       user = data;

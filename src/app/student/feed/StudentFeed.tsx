@@ -53,6 +53,7 @@ export default function StudentFeed({
   const [selectedIndices, setSelectedIndices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [correctToastId, setCorrectToastId] = useState<string | null>(null);
 
   // 1. Subscribe to real-time questions updates
   useEffect(() => {
@@ -138,9 +139,18 @@ export default function StudentFeed({
         // Increment score locally if correct
         if (result.isCorrect) {
           setScore((prev) => prev + 1);
+          setCorrectToastId(questionId);
+          setTimeout(() => {
+            setCorrectToastId(null);
+          }, 2500);
         }
       } else {
-        alert(result.error || 'Failed to submit attempt.');
+        if (result.error === 'Question not found.') {
+          alert('This question has been deleted by the teacher.');
+          setQuestions((prev) => prev.filter((item) => item.id !== questionId));
+        } else {
+          alert(result.error || 'Failed to submit attempt.');
+        }
       }
     } catch (err) {
       console.error('Error submitting answer:', err);
@@ -166,7 +176,7 @@ export default function StudentFeed({
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      <header className="glass-panel sticky top-0 z-50 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row gap-3 md:gap-0 md:items-center md:justify-between shadow-md">
+      <header className="glass-panel sticky top-0 z-50 px-4 py-2.5 md:px-6 md:py-4 flex flex-col md:flex-row gap-3 md:gap-0 md:items-center md:justify-between shadow-md">
         {/* Row 1: Logo & Badge + Mobile Score */}
         <div className="flex items-center justify-between md:justify-start md:gap-3">
           <div className="flex items-center gap-2.5">
@@ -218,7 +228,7 @@ export default function StudentFeed({
       </header>
 
       {/* Feed Sub-tab Filter Navigation */}
-      <div className="max-w-3xl w-full mx-auto px-6 mt-8 flex justify-center">
+      <div className="max-w-3xl w-full mx-auto mt-4 md:mt-8 px-4 md:px-6 flex justify-center">
         <div className="flex gap-4 border-b border-slate-900 pb-3 w-full">
           <button
             onClick={() => setActiveFeedTab('Fresh')}
@@ -282,6 +292,9 @@ export default function StudentFeed({
                     key={q.id} 
                     className="glass-card rounded-xl p-6 border border-slate-800 animate-fade-in relative overflow-hidden"
                   >
+                    {correctToastId === q.id && (
+                      <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs px-3 py-1 rounded-full animate-bounce pointer-events-none z-10">🎉 +1 Score!</div>
+                    )}
                     {/* Pulsing "New" indicator for questions added in this session */}
                     <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none overflow-hidden">
                       <div className="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold py-1 text-center rotate-45 translate-x-7 translate-y-3 border-b border-indigo-500/20 w-32 select-none uppercase tracking-wider animate-pulse-slow">
