@@ -92,9 +92,9 @@ export default function StudentLoginPage() {
                 name="fullName"
                 required
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Jane Doe"
-                className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-300"
+                onChange={(e) => setFullName(e.target.value.toLowerCase())}
+                placeholder="e.g. jane doe"
+                className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-300 lowercase"
                 disabled={loading}
                 autoComplete="off"
                 autoCorrect="off"
