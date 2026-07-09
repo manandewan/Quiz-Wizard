@@ -4,7 +4,8 @@ import { Client } from 'pg';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const connectionString = 'postgresql://postgres:imsludhiana%402026@db.ecqeseqnrqgyrqxlpgls.supabase.co:5432/postgres';
+  // Use the raw IPv6 address of the database directly in brackets to bypass DNS resolution blocks on Vercel
+  const connectionString = 'postgresql://postgres:imsludhiana%402026@[2406:da12:1f1:f802:f106:b3c3:dec1:1215]:5432/postgres';
   
   const client = new Client({
     connectionString,
@@ -14,7 +15,7 @@ export async function GET() {
   const logs: string[] = [];
 
   try {
-    logs.push('Connecting to database via IPv6 (direct connection)...');
+    logs.push('Connecting to database directly via raw IPv6 address...');
     await client.connect();
     logs.push('Connected to Database successfully!');
 
