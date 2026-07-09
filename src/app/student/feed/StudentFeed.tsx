@@ -154,33 +154,42 @@ export default function StudentFeed({
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Top Header */}
-      <header className="glass-panel sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-3">
-          <Link href="/student/feed" className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
-            Aptify
-          </Link>
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            Student Portal
-          </span>
-        </div>
-        
-        <div className="flex items-center gap-6">
-          <div className="text-right">
-            <span className="text-xs text-slate-400">Welcome back,</span>
-            <p className="text-sm font-semibold text-slate-200">{user.name}</p>
+      <header className="glass-panel sticky top-0 z-50 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row gap-3 md:gap-0 md:items-center md:justify-between shadow-md">
+        {/* Row 1: Logo & Badge + Mobile Score */}
+        <div className="flex items-center justify-between md:justify-start md:gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link href="/student/feed" className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+              Aptify
+            </Link>
+            <span className="px-2 py-0.5 rounded-full text-[10px] md:text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              Student Portal
+            </span>
           </div>
 
-          {/* Real-time score indicator */}
-          <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center gap-2">
+          {/* Score Indicator (Mobile Only) */}
+          <div className="md:hidden px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center gap-2">
+            <span className="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Score</span>
+            <span className="text-sm font-bold text-indigo-200" id="header-score-value-mobile">{score}</span>
+          </div>
+        </div>
+        
+        {/* Row 2: User welcome + Navigation */}
+        <div className="flex items-center justify-between md:justify-end gap-4 md:gap-6">
+          <div className="text-left md:text-right">
+            <span className="text-[10px] md:text-xs text-slate-400 block leading-tight">Welcome back,</span>
+            <p className="text-xs md:text-sm font-semibold text-slate-200 leading-tight">{user.name}</p>
+          </div>
+
+          {/* Score Indicator (Desktop Only) */}
+          <div className="hidden md:flex px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 items-center gap-2">
             <span className="text-xs text-indigo-300 font-semibold uppercase tracking-wider">Score</span>
             <span className="text-base font-bold text-indigo-200" id="header-score-value">{score}</span>
           </div>
 
-          <nav className="flex items-center gap-3">
+          <nav className="flex items-center gap-2 md:gap-3">
             <Link
               href="/student/leaderboard"
-              className="px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-semibold active:scale-[0.97] transition-all"
+              className="px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-[10px] md:text-xs font-semibold active:scale-[0.97] transition-all"
             >
               Leaderboard
             </Link>
@@ -188,7 +197,7 @@ export default function StudentFeed({
               onClick={handleLogout}
               id="student-logout-btn"
               disabled={isLoggingOut}
-              className="px-3.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800 hover:bg-slate-800 hover:text-slate-100 text-slate-400 text-xs font-semibold active:scale-[0.97] transition-all disabled:opacity-50 disabled:pointer-events-none"
+              className="px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-lg bg-slate-900/60 border border-slate-800 hover:bg-slate-800 hover:text-slate-100 text-slate-400 text-[10px] md:text-xs font-semibold active:scale-[0.97] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
               {isLoggingOut ? 'Logging out...' : 'Log Out'}
             </button>
