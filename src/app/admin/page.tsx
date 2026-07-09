@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/app/actions/auth';
+import { getCurrentTeacher } from '@/app/actions/auth';
 import { supabase } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import TeacherDashboard from './TeacherDashboard';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   // 1. Authenticate user on server
-  const user = await getCurrentUser();
+  const user = await getCurrentTeacher();
 
   if (!user || user.role !== 'teacher') {
     redirect('/admin/login');

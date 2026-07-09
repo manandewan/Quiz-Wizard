@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/app/actions/auth';
+import { getCurrentStudent } from '@/app/actions/auth';
 import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 export default async function LeaderboardPage() {
   // 1. Authenticate user (either student or teacher can see it)
-  const user = await getCurrentUser();
+  const user = await getCurrentStudent();
   if (!user) {
     redirect('/');
   }

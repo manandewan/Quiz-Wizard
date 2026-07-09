@@ -253,3 +253,39 @@ export async function getCurrentUser() {
 
   return null;
 }
+
+export async function getCurrentStudent() {
+  try {
+    const cookieStore = await cookies();
+    const studentToken = cookieStore.get('student-session')?.value;
+    if (studentToken) {
+      try {
+        const decoded = jwt.verify(studentToken, JWT_SECRET) as { id: string; name: string; role: string };
+        if (decoded.role === 'student') return decoded;
+      } catch {
+        // Token invalid or expired
+      }
+    }
+  } catch (err) {
+    console.error('Error in getCurrentStudent:', err);
+  }
+  return null;
+}
+
+export async function getCurrentTeacher() {
+  try {
+    const cookieStore = await cookies();
+    const teacherToken = cookieStore.get('teacher-session')?.value;
+    if (teacherToken) {
+      try {
+        const decoded = jwt.verify(teacherToken, JWT_SECRET) as { id: string; name: string; role: string; email: string };
+        if (decoded.role === 'teacher') return decoded;
+      } catch {
+        // Token invalid or expired
+      }
+    }
+  } catch (err) {
+    console.error('Error in getCurrentTeacher:', err);
+  }
+  return null;
+}

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/app/actions/auth';
+import { getCurrentStudent } from '@/app/actions/auth';
 import { supabase } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import StudentFeed from './StudentFeed';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function StudentFeedPage() {
   // 1. Authenticate user on server side
-  const student = await getCurrentUser();
+  const student = await getCurrentStudent();
 
   if (!student || student.role !== 'student') {
     redirect('/');
