@@ -68,11 +68,13 @@ export default async function AdminPage() {
   }
 
   return (
-    <TeacherDashboard
-      initialQuestions={questions || []}
-      initialAttempts={attempts || []}
-      initialStudents={students || []}
-      user={user as any}
-    />
+    <div className="teacher-theme min-h-screen bg-slate-950">
+      <TeacherDashboard
+        initialQuestions={questions || []}
+        initialAttempts={attempts || []}
+        initialStudents={students || []}
+        user={user as any}
+      />
+    </div>
   );
 }

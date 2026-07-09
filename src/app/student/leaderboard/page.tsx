@@ -63,7 +63,7 @@ export default async function LeaderboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-2xl w-full mx-auto p-6 space-y-6 z-10 animate-fade-in">
+      <main className="flex-1 max-w-2xl w-full mx-auto p-4 md:p-6 space-y-6 z-10 animate-fade-in">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 bg-clip-text text-transparent">
             Top Performers
@@ -77,7 +77,7 @@ export default async function LeaderboardPage() {
         <div className="glass-panel rounded-2xl shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-600" />
           
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {list.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
                 No student points logged yet. Be the first to attempt a question!
@@ -118,10 +118,10 @@ export default async function LeaderboardPage() {
                   return (
                     <div 
                       key={student.id} 
-                      className={`flex items-center justify-between py-4 px-3 rounded-lg transition-colors ${
+                      className={`flex items-center justify-between py-4 px-3 rounded-lg transition-colors border ${
                         isSelf 
-                          ? 'bg-indigo-500/5 border border-indigo-500/20 shadow-md' 
-                          : 'hover:bg-slate-900/30'
+                          ? 'bg-indigo-500/5 border-indigo-500/20 shadow-md' 
+                          : 'border-transparent hover:bg-slate-900/30'
                       }`}
                     >
                       <div className="flex items-center gap-4">
@@ -134,17 +134,17 @@ export default async function LeaderboardPage() {
                           </span>
                           {rank === 1 && (
                             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">
-                              🥇 Gold
+                              Gold
                             </span>
                           )}
                           {rank === 2 && (
                             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200/15 text-slate-200 border border-slate-200/30">
-                              🥈 Silver
+                              Silver
                             </span>
                           )}
                           {rank === 3 && (
                             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-700/15 text-amber-600 border border-amber-700/30">
-                              🥉 Bronze
+                              Bronze
                             </span>
                           )}
                           {isSelf && (

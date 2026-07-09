@@ -5,6 +5,11 @@
   --foreground: #f8fafc; /* slate-50 */
   --card-bg: rgba(15, 23, 42, 0.6); /* slate-900 with opacity */
   --card-border: rgba(51, 65, 85, 0.35); /* slate-700 with opacity */
+  --glow-color: 99, 102, 241;
+}
+
+.teacher-theme {
+  --glow-color: 168, 85, 247;
 }
 
 @theme inline {
@@ -40,9 +45,9 @@ body {
 
 .glass-card:hover {
   background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(99, 102, 241, 0.4); /* Indigo-500 border on hover */
+  border-color: rgba(var(--glow-color), 0.4); /* Indigo-500 or Purple-500 border on hover */
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 10px 20px -10px rgba(var(--glow-color), 0.3);
 }
 
 /* Custom modern scrollbars */
@@ -56,12 +61,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.3);
+  background: rgba(var(--glow-color), 0.3);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.6);
+  background: rgba(var(--glow-color), 0.6);
 }
 
 /* Animations */

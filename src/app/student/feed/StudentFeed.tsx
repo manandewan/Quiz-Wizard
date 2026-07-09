@@ -242,7 +242,7 @@ export default function StudentFeed({
       </div>
 
       {/* Main Feed Content */}
-      <main className="flex-1 max-w-3xl w-full mx-auto p-6 space-y-6">
+      <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 space-y-6">
         
         {/* FRESH QUESTIONS TAB */}
         {activeFeedTab === 'Fresh' && (
@@ -435,7 +435,7 @@ export default function StudentFeed({
                         const isSelected = selectedIdx === idx;
                         const isCorrect = correctIdx === idx;
 
-                        let style = 'bg-slate-900/60 border-slate-800/80 text-slate-500';
+                        let style = 'bg-slate-900/60 border-slate-800/80 text-slate-300 opacity-80';
                         if (isCorrect) {
                           style = 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400 font-semibold';
                         } else if (isSelected) {
